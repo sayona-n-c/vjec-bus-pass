@@ -50,8 +50,13 @@ def auth_required(view_func):
 def is_within_registration_window():
     """Returns True if current IST time is Mon-Sat between 9:00 AM and 3:10 PM.
     Sundays are holidays – booking is not available.
+    If REGISTRATION_BYPASS_DATE matches today, restrictions are skipped.
     """
     now = timezone.localtime(timezone.now())
+    # Check bypass date (e.g. for testing or special events)
+    bypass_date = getattr(settings, 'REGISTRATION_BYPASS_DATE', None)
+    if bypass_date and str(now.date()) == bypass_date:
+        return True
     # Sunday = weekday 6 → college holiday, no booking
     if now.weekday() == 6:
         return False

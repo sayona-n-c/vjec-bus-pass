@@ -125,6 +125,10 @@ REGISTRATION_START_MINUTE = 0
 REGISTRATION_END_HOUR = 15    # 3:10 PM
 REGISTRATION_END_MINUTE = 10
 
+# Bypass date: set to 'YYYY-MM-DD' to allow booking all day (ignores time & Sunday restriction)
+# Set to None to re-enable normal restrictions
+REGISTRATION_BYPASS_DATE = '2026-03-14'
+
 # Bus pass fare
 DEFAULT_BUS_FARE = 500
 
