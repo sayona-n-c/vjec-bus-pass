@@ -1,0 +1,390 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Digital Bus Pass – {{ bus_pass.pass_id_short }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* ── Pass Card with Bus Image Background ── */
+    .pass-card {
+        position: relative;
+        overflow: hidden;
+        border-radius: 20px;
+        max-width: 760px;
+        margin: 0 auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+    }
+
+    /* Blurred bus image sitting behind everything */
+    .pass-bus-bg {
+        position: absolute;
+        inset: 0;
+        background: url("{% static 'core/images/vj_bus.png' %}") center center / cover no-repeat;
+        filter: blur(6px) brightness(0.3) saturate(0.6);
+        transform: scale(1.08);
+        z-index: 0;
+    }
+
+    /* Dark gradient overlay */
+    .pass-bg-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(160deg,
+                rgba(10, 20, 70, 0.90) 0%,
+                rgba(8, 15, 55, 0.85) 45%,
+                rgba(22, 8, 50, 0.88) 100%);
+        z-index: 1;
+    }
+
+    .pass-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    /* ── Header ── */
+    .pass-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 22px 26px 18px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.04);
+    }
+
+    .pass-header .college-logo {
+        height: 60px;
+        width: 60px;
+        object-fit: contain;
+        filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
+    }
+
+    .pass-header .college-info h2 {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: #fff;
+        line-height: 1.2;
+    }
+
+    .pass-header .college-info p {
+        font-size: 0.73rem;
+        color: rgba(255, 255, 255, 0.55);
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+    }
+
+    .pass-header .pass-ids {
+        margin-left: auto;
+        text-align: right;
+    }
+
+    .pass-header .pass-ids small {
+        font-size: 0.65rem;
+        color: rgba(255, 255, 255, 0.45);
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+
+    .pass-header .pass-ids code {
+        display: block;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #fbbf24;
+        letter-spacing: 2px;
+        margin-top: 2px;
+    }
+
+    /* ── Body ── */
+    .pass-body {
+        padding: 22px 26px;
+    }
+
+    .pass-strip {
+        background: linear-gradient(90deg, rgba(59, 130, 246, 0.18), rgba(59, 130, 246, 0.05));
+        border: 1px solid rgba(59, 130, 246, 0.25);
+        border-radius: 8px;
+        padding: 9px 16px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #93c5fd;
+        letter-spacing: 2px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .pass-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px 22px;
+        margin-bottom: 20px;
+    }
+
+    .pass-field label {
+        display: block;
+        font-size: 0.64rem;
+        font-weight: 700;
+        letter-spacing: 1.6px;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.42);
+        margin-bottom: 2px;
+    }
+
+    .pass-field .pass-value {
+        display: block;
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: #f1f5f9;
+    }
+
+    .pass-dashed {
+        border-top: 2px dashed rgba(255, 255, 255, 0.12);
+        margin: 4px 0 18px;
+    }
+
+    /* Validity banner */
+    .validity-banner {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: rgba(251, 191, 36, 0.10);
+        border: 1px solid rgba(251, 191, 36, 0.25);
+        border-radius: 10px;
+        padding: 10px 16px;
+        margin-bottom: 14px;
+    }
+
+    .validity-banner .v-icon {
+        font-size: 1.4rem;
+    }
+
+    .validity-banner .v-text small {
+        font-size: 0.65rem;
+        color: rgba(255, 255, 255, 0.45);
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        display: block;
+    }
+
+    .validity-banner .v-text strong {
+        font-size: 0.9rem;
+        color: #fbbf24;
+        font-weight: 700;
+    }
+
+    /* Scan instructions (replaces QR) */
+    .scan-box {
+        text-align: center;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        padding: 18px;
+        margin-top: 4px;
+    }
+
+    .scan-box .scan-icon {
+        font-size: 2.5rem;
+        margin-bottom: 8px;
+    }
+
+    .scan-box p {
+        font-size: 0.82rem;
+        color: rgba(255, 255, 255, 0.65);
+        line-height: 1.6;
+    }
+
+    .scan-box .scan-url {
+        display: inline-block;
+        margin-top: 8px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.75rem;
+        background: rgba(255, 255, 255, 0.08);
+        color: #93c5fd;
+        padding: 5px 12px;
+        border-radius: 6px;
+        letter-spacing: 0.5px;
+    }
+
+    /* ── Footer ── */
+    .pass-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 13px 26px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(0, 0, 0, 0.25);
+    }
+
+    .pass-footer p {
+        font-size: 0.68rem;
+        color: rgba(255, 255, 255, 0.35);
+        letter-spacing: 0.4px;
+    }
+
+    .pass-status-badge {
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 5px 14px;
+        border-radius: 20px;
+        letter-spacing: 0.5px;
+    }
+
+    .pass-status-badge.active {
+        background: #14532d;
+        color: #86efac;
+        border: 1px solid #16a34a;
+    }
+
+    .pass-status-badge.pending {
+        background: #7c2d12;
+        color: #fdba74;
+        border: 1px solid #ea580c;
+    }
+
+    .pass-status-badge.expired {
+        background: #374151;
+        color: #9ca3af;
+        border: 1px solid #6b7280;
+    }
+
+    @media print {
+        .pass-bus-bg {
+            filter: blur(4px) brightness(0.4) !important;
+        }
+
+        .navbar,
+        footer,
+        .page-actions {
+            display: none !important;
+        }
+
+        .pass-card {
+            box-shadow: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-content fade-up">
+    <!-- Action bar -->
+    <div class="page-actions"
+        style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+        <div>
+            <h1 style="font-size:1.7rem;font-weight:800;color:#0d2137">Digital Bus Pass</h1>
+            <p style="color:#4a5568;font-size:0.85rem;margin-top:3px">
+                Issued: {{ bus_pass.created_at|date:"d M Y, h:i A" }}
+            </p>
+        </div>
+        <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
+            <button type="button" onclick="window.print()" class="btn btn-outline">Print Pass</button>
+            <a href="{% url 'dashboard' %}" class="btn btn-primary">Dashboard</a>
+        </div>
+    </div>
+
+    <!-- DIGITAL PASS CARD -->
+    <div class="pass-card">
+        <div class="pass-bus-bg"></div>
+        <div class="pass-bg-overlay"></div>
+
+        <div class="pass-content">
+            <!-- Header -->
+            <div class="pass-header">
+                <img src="{% static 'core/images/vjec_logo.png' %}" class="college-logo" alt="VJEC" />
+                <div class="college-info">
+                    <h2>VIMAL JYOTHI</h2>
+                    <p>Engineering College &mdash; Bus Pass</p>
+                </div>
+                <div class="pass-ids">
+                    <small>Pass ID</small>
+                    <code>{{ bus_pass.pass_id_short }}</code>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div class="pass-body">
+                <div class="pass-strip">{{ bus_pass.pass_id_full }}</div>
+
+                <div class="pass-grid">
+                    <div class="pass-field">
+                        <label>Pass Holder</label>
+                        <span class="pass-value">{{ bus_pass.user.get_full_name|default:bus_pass.user.username }}</span>
+                    </div>
+                    <div class="pass-field">
+                        <label>VML No</label>
+                        <span class="pass-value">{{ profile.vml_no|default:"Faculty/Staff" }}</span>
+                    </div>
+                    <div class="pass-field">
+                        <label>Bus Number</label>
+                        <span class="pass-value">{{ bus_pass.bus.bus_number }}</span>
+                    </div>
+                    <div class="pass-field">
+                        <label>Bus Type</label>
+                        <span class="pass-value">{{ bus_pass.bus.get_bus_type_display }}</span>
+                    </div>
+                    <div class="pass-field">
+                        <label>Route</label>
+                        <span class="pass-value">{{ bus_pass.route.name|default:"—" }}</span>
+                    </div>
+                    <div class="pass-field">
+                        <label>Boarding Point</label>
+                        <span class="pass-value">{{ bus_pass.boarding_point }}</span>
+                    </div>
+                    <div class="pass-field">
+                        <label>Amount Paid</label>
+                        <span class="pass-value" style="color:#fbbf24;font-size:1.05rem">&#8377;{{ bus_pass.amount_paid }}</span>
+                    </div>
+                    <div class="pass-field">
+                        <label>Department</label>
+                        <span class="pass-value">{{ profile.department|default:"—" }}</span>
+                    </div>
+                    <div class="pass-field">
+                        <label>Booked On</label>
+                        <span class="pass-value">{{ bus_pass.created_at|date:"d M Y" }}</span>
+                    </div>
+                    <div class="pass-field">
+                        <label>Booked At</label>
+                        <span class="pass-value" style="color:#93c5fd">{{ bus_pass.created_at|date:"h:i A" }}</span>
+                    </div>
+                </div>
+
+                <!-- Validity banner -->
+                <div class="validity-banner">
+                    <div class="v-icon">🗓</div>
+                    <div class="v-text">
+                        <small>Valid Until</small>
+                        <strong>{{ bus_pass.valid_until|date:"d M Y" }} &mdash; 11:59 PM</strong>
+                    </div>
+                </div>
+
+                <!-- Scan instruction box (replaces old QR code) -->
+                <div class="pass-dashed"></div>
+                <div class="scan-box">
+                    <div class="scan-icon">📲</div>
+                    <p><strong style="color:#fff">How to board:</strong><br>
+                        Scan the <strong style="color:#fbbf24">physical QR code</strong> displayed inside the bus
+                        with your phone to mark attendance.</p>
+                    <span class="scan-url">vjec-bus.app/mark-attendance/{{ bus_pass.bus.id }}/</span>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="pass-footer">
+                <p>ISSUED BY: VIMAL JYOTHI ENGINEERING COLLEGE TRANSPORT DEPT</p>
+                <span class="pass-status-badge {{ bus_pass.status }}">
+                    {% if bus_pass.status == 'active' %}ACTIVE
+                    {% elif bus_pass.status == 'pending' %}AWAITING PAYMENT
+                    {% else %}{{ bus_pass.status|upper }}{% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Below-card buttons -->
+    <div style="text-align:center;margin-top:1.5rem;display:flex;justify-content:center;gap:1rem;flex-wrap:wrap">
+        <button type="button" onclick="window.print()" class="btn btn-accent btn-lg" style="padding:12px 28px">
+            Print / Save as PDF
+        </button>
+        <a href="{% url 'my_passes' %}" class="btn btn-outline btn-lg" style="padding:12px 28px">All My Passes</a>
+    </div>
+</div>
+{% endblock %}

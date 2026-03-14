@@ -1,0 +1,69 @@
+{% extends 'core/base.html' %}
+{% block title %}Attendance – Bus {{ bus.bus_number }}{% endblock %}
+
+{% block content %}
+<div class="main-content fade-up" style="max-width:520px;margin:3rem auto;text-align:center">
+
+    {% if status == 'success' %}
+    <div class="card" style="padding:2.5rem 2rem;border-top:5px solid #2e7d32">
+        <div style="font-size:4rem;margin-bottom:1rem">✅</div>
+        <h1 style="color:#1b5e20;font-size:1.6rem;font-weight:800;margin-bottom:0.5rem">Boarded Successfully!</h1>
+        <p style="color:#4a5568;font-size:0.95rem;margin-bottom:1.5rem">{{ message }}</p>
+
+        <div
+            style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:1.1rem 1.4rem;text-align:left;margin-bottom:1.5rem">
+            <table style="width:100%;border:none;background:none">
+                <tr>
+                    <td style="color:#4a5568;padding:5px 0;font-size:0.85rem">Student</td>
+                    <td style="color:#0d2137;font-weight:700;font-size:0.85rem">{{
+                        request.user.get_full_name|default:request.user.username }}</td>
+                </tr>
+                <tr>
+                    <td style="color:#4a5568;padding:5px 0;font-size:0.85rem">Bus</td>
+                    <td style="color:#0d2137;font-weight:700;font-size:0.85rem">{{ bus.bus_number }} – {{ bus.route.name
+                        }}</td>
+                </tr>
+                <tr>
+                    <td style="color:#4a5568;padding:5px 0;font-size:0.85rem">Time</td>
+                    <td style="color:#0d2137;font-weight:700;font-size:0.85rem">{{ scanned_at|date:"d M Y, h:i A" }}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="color:#4a5568;padding:5px 0;font-size:0.85rem">Seats Left</td>
+                    <td style="color:#1b5e20;font-weight:700;font-size:0.85rem">{{ available_seats }}</td>
+                </tr>
+                {% if bus_pass %}
+                <tr>
+                    <td style="color:#4a5568;padding:5px 0;font-size:0.85rem">Pass ID</td>
+                    <td style="color:#0d2137;font-weight:700;font-size:0.78rem;font-family:monospace">{{
+                        bus_pass.pass_id_short }}</td>
+                </tr>
+                {% endif %}
+            </table>
+        </div>
+        <a href="{% url 'dashboard' %}" class="btn btn-primary" style="display:block;padding:12px">Go to Dashboard</a>
+    </div>
+
+    {% elif status == 'already_marked' %}
+    <div class="card" style="padding:2.5rem 2rem;border-top:5px solid #f59e0b">
+        <div style="font-size:4rem;margin-bottom:1rem">⚠️</div>
+        <h1 style="color:#92400e;font-size:1.5rem;font-weight:800;margin-bottom:0.5rem">Already Boarded Today</h1>
+        <p style="color:#4a5568;font-size:0.95rem;margin-bottom:1rem">{{ message }}</p>
+        {% if scanned_at %}
+        <p style="color:#6b7280;font-size:0.82rem">First scan: {{ scanned_at|date:"h:i A" }}</p>
+        {% endif %}
+        <a href="{% url 'dashboard' %}" class="btn btn-outline"
+            style="display:block;margin-top:1.5rem;padding:12px">Dashboard</a>
+    </div>
+
+    {% elif status == 'no_pass' %}
+    <div class="card" style="padding:2.5rem 2rem;border-top:5px solid #c0392b">
+        <div style="font-size:4rem;margin-bottom:1rem">🚫</div>
+        <h1 style="color:#7b1c1c;font-size:1.5rem;font-weight:800;margin-bottom:0.5rem">No Active Pass</h1>
+        <p style="color:#4a5568;font-size:0.95rem;margin-bottom:1.5rem">{{ message }}</p>
+        <a href="{% url 'routes' %}" class="btn btn-accent" style="display:block;padding:12px">Book a Bus Pass</a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

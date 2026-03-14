@@ -1,0 +1,365 @@
+{% extends 'core/base.html' %}
+{% block title %}Dashboard{% endblock %}
+
+{% block extra_head %}
+{% if not user.is_staff and profile.role != 'admin' %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="main-content fade-up">
+    <div class="page-header">
+        <h1>👋 Welcome, {{ user.first_name|default:user.username }}!</h1>
+        <p>
+            {% if profile %}
+            <span class="badge badge-primary" style="margin-right:0.5rem">{{ profile.role|capfirst }}</span>
+            {% if profile.vml_no %}<span class="badge badge-info">{{ profile.vml_no }}</span>{% endif %}
+            {% endif %}
+        </p>
+    </div>
+
+    <!-- Time Window Notice — Students only -->
+    {% if not user.is_staff and profile.role != 'admin' %}
+    {% if is_within_window %}
+    <div class="time-window-banner">
+        <span style="font-size:1.4rem">🟢</span>
+        <div>
+            <strong style="color:#ffd54f">Booking Window Open</strong>
+            <p style="color:var(--text-muted);font-size:0.85rem;margin:0">
+                You can book a bus pass between 9:00 AM – 3:10 PM. Window is currently <strong
+                    style="color:#81c784">OPEN</strong>.
+            </p>
+        </div>
+    </div>
+    {% else %}
+    <div class="time-window-banner" style="background:rgba(198,40,40,0.1);border-color:rgba(198,40,40,0.3)">
+        <span style="font-size:1.4rem">🔴</span>
+        <div>
+            <strong style="color:#ef9a9a">Booking Window Closed</strong>
+            <p style="color:var(--text-muted);font-size:0.85rem;margin:0">
+                Booking available only between <strong style="color:var(--white)">9:00 AM – 3:10 PM</strong> IST.
+            </p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Active Pass Banner (Students only) -->
+    {% if active_pass %}
+    <div class="card"
+        style="margin-bottom:1.5rem;background:linear-gradient(135deg,rgba(46,125,50,0.2),rgba(27,42,107,0.6));border-color:rgba(46,125,50,0.4)">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+            <div style="display:flex;align-items:center;gap:1rem">
+                <div style="font-size:2.5rem">🎫</div>
+                <div>
+                    <div class="card-title">Active Bus Pass</div>
+                    <p style="color:var(--text-muted);font-size:0.88rem">
+                        Bus {{ active_pass.bus.bus_number }} • {{ active_pass.boarding_point }}
+                    </p>
+                    <code style="font-size:0.8rem;color:var(--accent-light)">ID: {{ active_pass.pass_id_short }}</code>
+                </div>
+            </div>
+            <a href="{% url 'view_pass' active_pass.pass_id %}" class="btn btn-success">🎫 View Pass</a>
+        </div>
+    </div>
+    {% elif pending_pass %}
+    <div class="card" style="margin-bottom:1.5rem;background:rgba(249,168,37,0.1);border-color:rgba(249,168,37,0.3)">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+            <div>
+                <div class="card-title">⏳ Payment Pending</div>
+                <p style="color:var(--text-muted);font-size:0.88rem">Complete your payment to activate your bus pass.
+                </p>
+            </div>
+            <a href="{% url 'payment' pending_pass.pass_id %}" class="btn btn-accent">💳 Pay Now</a>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}{# end student-only block #}
+
+    <!-- Admin Control Panel Banner -->
+    {% if user.is_staff or profile.role == 'admin' %}
+    <div class="card"
+        style="margin-bottom:1.5rem;background:linear-gradient(135deg,rgba(26,35,126,0.25),rgba(30,45,85,0.55));border-color:rgba(100,130,255,0.3)">
+        <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:1rem">
+                <div style="font-size:2.5rem">⚙️</div>
+                <div>
+                    <div class="card-title">Admin Control Panel</div>
+                    <p style="color:var(--text-muted);font-size:0.88rem">Manage buses, routes, student users,
+                        attendance, and passes.</p>
+                </div>
+            </div>
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
+                <a href="{% url 'admin_dashboard' %}" class="btn btn-primary">⚙️ Admin Dashboard</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Stats Row -->
+    <div class="grid-4" style="margin-bottom:2rem">
+        <div class="stat-card">
+            <div class="stat-icon blue">🚌</div>
+            <div>
+                <div class="stat-value">{{ active_buses }}</div>
+                <div class="stat-label">Active Buses</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon orange">🗺️</div>
+            <div>
+                <div class="stat-value">{{ active_routes }}</div>
+                <div class="stat-label">Routes Available</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon green">🎫</div>
+            <div>
+                <div class="stat-value">{{ recent_passes|length }}</div>
+                <div class="stat-label">Your Passes</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon purple">📍</div>
+            <div>
+                <div class="stat-value">Live</div>
+                <div class="stat-label">GPS Tracking</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions — Students only -->
+    {% if not user.is_staff and profile.role != 'admin' %}
+    <div class="section-title">🚀 Quick Actions</div>
+    <div class="grid-3" style="margin-bottom:2rem">
+        <a href="{% url 'routes' %}" class="card" style="text-decoration:none;text-align:center;padding:2rem">
+            <div style="font-size:2.5rem;margin-bottom:0.75rem">🗺️</div>
+            <div class="card-title">Browse Routes</div>
+            <p class="card-text">View all available bus routes and stops</p>
+        </a>
+        <a href="{% url 'scan_attendance' %}" class="card"
+            style="text-decoration:none;text-align:center;padding:2rem;border-color:rgba(22,163,74,0.4)">
+            <div style="font-size:2.5rem;margin-bottom:0.75rem">📲</div>
+            <div class="card-title">Scan Bus QR</div>
+            <p class="card-text">Open camera &amp; scan the bus QR to mark attendance</p>
+        </a>
+        <a href="{% url 'my_passes' %}" class="card" style="text-decoration:none;text-align:center;padding:2rem">
+            <div style="font-size:2.5rem;margin-bottom:0.75rem">🎫</div>
+            <div class="card-title">My Passes</div>
+            <p class="card-text">View and manage all your bus passes</p>
+        </a>
+        <a href="{% url 'map' %}" class="card" style="text-decoration:none;text-align:center;padding:2rem">
+            <div style="font-size:2.5rem;margin-bottom:0.75rem">📍</div>
+            <div class="card-title">Live Tracking</div>
+            <p class="card-text">Track buses in real-time on the map</p>
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- ═══════════ LIVE BUS TRACKING MAP ═══════════ -->
+    {% if not user.is_staff and profile.role != 'admin' %}
+    <div class="section-title">📍 Live Bus Tracking</div>
+    <div class="card" style="padding:0;overflow:hidden;margin-bottom:2rem;border-radius:16px">
+        <div id="bus-map" style="height:400px;width:100%;border-radius:16px"></div>
+        <div id="map-status"
+             style="background:var(--widget-bg);color:var(--text-muted);text-align:center;padding:0.6rem;font-size:0.82rem;border-top:1px solid rgba(255,255,255,0.08)">
+            Fetching bus locations…
+        </div>
+    </div>
+    <script>
+    (function(){
+        // Default center: VJEC Chemperi approx coords
+        const map = L.map('bus-map').setView([11.995, 75.385], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap',
+            maxZoom: 18,
+        }).addTo(map);
+
+        const busIcon = L.divIcon({
+            className: 'bus-marker-icon',
+            html: '<div style="background:#2563eb;color:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 8px rgba(37,99,235,0.5);border:2px solid #fff">🚌</div>',
+            iconSize: [32, 32],
+            iconAnchor: [16, 16],
+        });
+
+        let markers = {};
+
+        function updateMap() {
+            fetch('/api/bus-locations/')
+                .then(r => r.json())
+                .then(data => {
+                    const buses = data.buses || [];
+                    const statusEl = document.getElementById('map-status');
+
+                    // Remove markers for buses no longer tracking
+                    Object.keys(markers).forEach(id => {
+                        if (!buses.find(b => String(b.bus_id) === id)) {
+                            map.removeLayer(markers[id]);
+                            delete markers[id];
+                        }
+                    });
+
+                    if (buses.length === 0) {
+                        statusEl.textContent = 'No buses are currently sharing their location.';
+                        return;
+                    }
+
+                    buses.forEach(bus => {
+                        const key = String(bus.bus_id);
+                        const popupContent = `<div style="text-align:center;font-family:Inter,sans-serif">` +
+                            `<strong style="font-size:1.05rem">🚌 Bus ${bus.bus_number}</strong><br>` +
+                            `<span style="color:#64748b;font-size:0.85rem">${bus.route || 'No route'}</span><br>` +
+                            `<span style="color:#16a34a;font-weight:600;font-size:0.82rem">● LIVE</span>` +
+                            `</div>`;
+
+                        if (markers[key]) {
+                            markers[key].setLatLng([bus.lat, bus.lng]);
+                            markers[key].setPopupContent(popupContent);
+                        } else {
+                            markers[key] = L.marker([bus.lat, bus.lng], { icon: busIcon })
+                                .addTo(map)
+                                .bindPopup(popupContent);
+                        }
+                    });
+
+                    statusEl.textContent = `${buses.length} bus(es) live • Updates every 30s`;
+
+                    // Fit map to markers if first load
+                    if (buses.length > 0 && Object.keys(markers).length === buses.length) {
+                        const group = new L.featureGroup(Object.values(markers));
+                        map.fitBounds(group.getBounds().pad(0.15));
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('map-status').textContent = 'Failed to load bus locations.';
+                });
+        }
+
+        updateMap();
+        setInterval(updateMap, 30000);
+    })();
+    </script>
+    {% endif %}
+
+    <!-- Recent Passes Table -->
+    {% if recent_passes %}
+    <div class="section-title">📋 Recent Passes</div>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Pass ID</th>
+                    <th>Bus</th>
+                    <th>Route</th>
+                    <th>Boarding Point</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Booked At</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in recent_passes %}
+                <tr>
+                    <td><code style="color:var(--accent-light);font-size:0.85rem">{{ p.pass_id_short }}</code></td>
+                    <td><strong>{{ p.bus.bus_number }}</strong></td>
+                    <td>{{ p.route.name|default:"—" }}</td>
+                    <td>{{ p.boarding_point }}</td>
+                    <td>
+                        ₹{{ p.amount_paid }}
+                    </td>
+                    <td><span
+                            class="badge badge-{% if p.status == 'active' %}success{% elif p.status == 'pending' %}warning{% else %}danger{% endif %}">{{
+                            p.status|capfirst }}</span></td>
+                    <td style="font-size:0.82rem;white-space:nowrap">
+                        {{ p.created_at|date:"d M Y" }}<br>
+                        <span style="opacity:0.75">{{ p.created_at|time:"h:i A" }}</span>
+                    </td>
+                    <td><a href="{% url 'view_pass' p.pass_id %}" class="btn btn-outline btn-sm">View</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if not user.is_staff and profile.role != 'admin' %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function(){
+    // Default center: VJEC Chemperi approx coords
+    const map = L.map('bus-map').setView([11.995, 75.385], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap',
+        maxZoom: 18,
+    }).addTo(map);
+
+    const busIcon = L.divIcon({
+        className: 'bus-marker-icon',
+        html: '<div style="background:#2563eb;color:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 8px rgba(37,99,235,0.5);border:2px solid #fff">🚌</div>',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+    });
+
+    let markers = {};
+
+    function updateMap() {
+        fetch('/api/bus-locations/')
+            .then(r => r.json())
+            .then(data => {
+                const buses = data.buses || [];
+                const statusEl = document.getElementById('map-status');
+
+                // Remove markers for buses no longer tracking
+                Object.keys(markers).forEach(id => {
+                    if (!buses.find(b => String(b.bus_id) === id)) {
+                        map.removeLayer(markers[id]);
+                        delete markers[id];
+                    }
+                });
+
+                if (buses.length === 0) {
+                    statusEl.textContent = 'No buses are currently sharing their location.';
+                    return;
+                }
+
+                buses.forEach(bus => {
+                    const key = String(bus.bus_id);
+                    const popupContent = `<div style="text-align:center;font-family:Inter,sans-serif">` +
+                        `<strong style="font-size:1.05rem">🚌 Bus ${bus.bus_number}</strong><br>` +
+                        `<span style="color:#64748b;font-size:0.85rem">${bus.route || 'No route'}</span><br>` +
+                        `<span style="color:#16a34a;font-weight:600;font-size:0.82rem">● LIVE</span>` +
+                        `</div>`;
+
+                    if (markers[key]) {
+                        markers[key].setLatLng([bus.lat, bus.lng]);
+                        markers[key].setPopupContent(popupContent);
+                    } else {
+                        markers[key] = L.marker([bus.lat, bus.lng], { icon: busIcon })
+                            .addTo(map)
+                            .bindPopup(popupContent);
+                    }
+                });
+
+                statusEl.textContent = `${buses.length} bus(es) live • Updates every 30s`;
+
+                // Fit map to markers if first load
+                if (buses.length > 0 && Object.keys(markers).length === buses.length) {
+                    const group = new L.featureGroup(Object.values(markers));
+                    map.fitBounds(group.getBounds().pad(0.15));
+                }
+            })
+            .catch(() => {
+                document.getElementById('map-status').textContent = 'Failed to load bus locations.';
+            });
+    }
+
+    updateMap();
+    setInterval(updateMap, 30000);
+})();
+</script>
+{% endif %}
+{% endblock %}

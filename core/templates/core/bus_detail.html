@@ -1,0 +1,349 @@
+{% extends 'core/base.html' %}
+{% block title %}Bus {{ bus.bus_number }} Details{% endblock %}
+
+{% block extra_head %}
+<style>
+    .seats-available { font-weight:700; color:#16a34a; }
+    .seats-full      { font-weight:700; color:#dc2626; }
+    .booking-card-available { border-left:4px solid #2e7d32; }
+    .booking-card-full      { border-left:4px solid #c0392b; }
+    .seat-bar-fill  { height:100%; border-radius:6px; width:var(--fill,0%); }
+    .seat-bar-fill.low    { background:#16a34a; }
+    .seat-bar-fill.medium { background:#d97706; }
+    .seat-bar-fill.high   { background:#dc2626; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-content fade-up">
+    <div
+        style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;flex-wrap:wrap;gap:1rem">
+        <div>
+            <h1 style="font-family:'Poppins',sans-serif;font-size:2rem;font-weight:700">
+                {{ bus.bus_number }}
+            </h1>
+            <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-top:0.4rem">
+                {% if bus.bus_type == 'tourist' %}
+                <span class="badge" style="background:#d97706;color:#fff;font-size:0.8rem">T – Tourist Bus</span>
+                {% else %}
+                <span class="badge" style="background:#1e3a8a;color:#fff;font-size:0.8rem">C – College Bus</span>
+                {% endif %}
+                <span style="color:var(--text-muted)">|</span>
+                {% if bus.route %}
+                <a href="{% url 'bus_list' bus.route.id %}"
+                    style="color:var(--accent-light);text-decoration:none;font-size:0.9rem">← Back to Routes</a>
+                {% else %}
+                <a href="{% url 'routes' %}"
+                    style="color:var(--accent-light);text-decoration:none;font-size:0.9rem">← Back to Routes</a>
+                {% endif %}
+            </div>
+            <p style="color:var(--text-muted);font-size:0.88rem;margin-top:0.35rem">
+                Route: {{ bus.route.name|default:"Not assigned" }}
+            </p>
+        </div>
+        {% if bus.is_available %}
+        <span class="badge" style="background:#16a34a;color:#fff;font-size:0.9rem;padding:0.5rem 1.25rem">
+            {{ bus.available_seats }} Seats Available
+        </span>
+        {% else %}
+        <span class="badge" style="background:#dc2626;color:#fff;font-size:0.9rem;padding:0.5rem 1.25rem">
+            Fully Occupied
+        </span>
+        {% endif %}
+    </div>
+
+    <div class="grid-2">
+        <!-- left: bus info -->
+        <div>
+            <!-- Bus Information Card — Blue accent -->
+            <div style="margin-bottom:1.5rem;background:#ffffff;border-radius:14px;
+                        border:1px solid #c7d7f7;
+                        box-shadow:0 2px 16px rgba(30,58,95,0.08);overflow:hidden">
+                <!-- Card header strip -->
+                <div style="background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);
+                            padding:0.85rem 1.25rem;display:flex;align-items:center;gap:0.6rem">
+                    <span style="font-size:1.2rem">📋</span>
+                    <span style="color:#ffffff !important;font-weight:700;font-size:0.95rem;letter-spacing:0.3px">Bus Information</span>
+                </div>
+                <div style="padding:1rem 1.25rem">
+                <table style="font-size:0.92rem;width:100%">
+                    <tr>
+                        <td style="color:#4a5568;padding:0.5rem 0.75rem 0.5rem 0;width:48%">Bus Number</td>
+                        <td style="font-weight:700;color:#1e3a5f">{{ bus.bus_number }}</td>
+                    </tr>
+                    <tr>
+                        <td style="color:#4a5568;padding:0.5rem 0.75rem 0.5rem 0">Route</td>
+                        <td style="color:#1a1a1a">{{ bus.route.name|default:"—" }}</td>
+                    </tr>
+                    <tr>
+                        <td style="color:#4a5568;padding:0.5rem 0.75rem 0.5rem 0">Total Capacity</td>
+                        <td style="color:#1a1a1a">{{ bus.capacity }} seats</td>
+                    </tr>
+                    <tr>
+                        <td style="color:#4a5568;padding:0.5rem 0.75rem 0.5rem 0">Current Occupancy</td>
+                        <td style="color:#1a1a1a">{{ bus.current_occupancy }} passengers</td>
+                    </tr>
+                    <tr>
+                        <td style="color:#4a5568;padding:0.5rem 0.75rem 0.5rem 0">Available Seats</td>
+                        {% if bus.is_available %}
+                        <td class="seats-available">{{ bus.available_seats }}</td>
+                        {% else %}
+                        <td class="seats-full">{{ bus.available_seats }}</td>
+                        {% endif %}
+                    </tr>
+                </table>
+                </div>
+            </div>
+
+            <!-- Seat Availability Bar -->
+            <div class="card" style="margin-bottom:1.5rem">
+                <div class="card-title" style="margin-bottom:1rem">🪑 Seat Occupancy</div>
+                <div class="seat-bar">
+                    <div class="seat-bar-track" style="height:16px">
+                        {% if bus.occupancy_percentage < 50 %}
+                        <div id="seat-fill" class="seat-bar-fill low" data-pct="{{ bus.occupancy_percentage }}"></div>
+                        {% elif bus.occupancy_percentage < 80 %}
+                        <div id="seat-fill" class="seat-bar-fill medium" data-pct="{{ bus.occupancy_percentage }}"></div>
+                        {% else %}
+                        <div id="seat-fill" class="seat-bar-fill high" data-pct="{{ bus.occupancy_percentage }}"></div>
+                        {% endif %}
+                    </div>
+                    <div class="seat-info">
+                        <span>{{ bus.available_seats }} free of {{ bus.capacity }}</span>
+                        <span>{{ bus.occupancy_percentage }}% full</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GPS Info -->
+            {% if gps %}
+            <div class="card">
+                <div class="card-title" style="margin-bottom:0.75rem">
+                    <span class="live-dot"></span> Live Location
+                </div>
+                <p style="color:var(--text-muted);font-size:0.88rem">
+                    Last updated: {{ gps.timestamp|timesince }} ago
+                </p>
+                <p style="font-size:0.88rem;margin-top:0.5rem">
+                    📍 {{ gps.latitude }}, {{ gps.longitude }}
+                    {% if gps.speed %}&nbsp; 🚀 {{ gps.speed }} km/h{% endif %}
+                </p>
+                <a href="{% url 'map' %}" class="btn btn-outline btn-sm" style="margin-top:0.75rem">View on Map →</a>
+            </div>
+            {% else %}
+            <div class="card">
+                <div class="card-title">GPS Tracking</div>
+                <p style="color:var(--text-muted);font-size:0.88rem;margin-top:0.5rem">
+                    No GPS data available for this bus yet.
+                </p>
+                <a href="{% url 'map' %}" class="btn btn-outline btn-sm" style="margin-top:0.75rem">Open Map</a>
+            </div>
+            {% endif %}
+
+            <!-- Bus Coordinator Card -->
+            {% if coordinator %}
+            <!-- Bus Coordinator Card — Emerald Teal accent -->
+            <div style="margin-top:1.5rem;background:#ffffff;border-radius:14px;
+                        border:1px solid #a7f3d0;
+                        box-shadow:0 2px 16px rgba(5,150,105,0.09);overflow:hidden">
+                <!-- Card header strip -->
+                <div style="background:linear-gradient(135deg,#065f46 0%,#059669 100%);
+                            padding:0.85rem 1.25rem;display:flex;align-items:center;gap:0.6rem">
+                    <span style="font-size:1.2rem">🧑‍✈️</span>
+                    <span style="color:#ffffff !important;font-weight:700;font-size:0.95rem;letter-spacing:0.3px">Bus Coordinator</span>
+                </div>
+                <div style="padding:1rem 1.25rem">
+                <table style="font-size:0.88rem;width:100%">
+                    <tr>
+                        <td style="color:#4a5568;padding:0.4rem 0.75rem 0.4rem 0;white-space:nowrap;width:45%">Name</td>
+                        <td style="font-weight:700;color:#065f46">{{ coordinator.name }}</td>
+                    </tr>
+                    <tr>
+                        <td style="color:#4a5568;padding:0.4rem 0.75rem 0.4rem 0;white-space:nowrap">Staff ID</td>
+                        <td style="font-weight:600;color:#1a1a1a">{{ coordinator.staff_id }}</td>
+                    </tr>
+                    {% if coordinator.contact %}
+                    <tr>
+                        <td style="color:#4a5568;padding:0.4rem 0.75rem 0.4rem 0">Contact</td>
+                        <td style="color:#1a1a1a">{{ coordinator.contact }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if coordinator.boarding_point %}
+                    <tr>
+                        <td style="color:#4a5568;padding:0.4rem 0.75rem 0.4rem 0">Boards At</td>
+                        <td style="color:#1a1a1a">{{ coordinator.boarding_point }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- right: booking + QR -->
+        <div>
+            <!-- Booking Card -->
+            {% if bus.is_available %}
+            <div class="card booking-card-available" style="margin-bottom:1.5rem">
+            {% else %}
+            <div class="card booking-card-full" style="margin-bottom:1.5rem">
+            {% endif %}
+                <div class="card-title">Book a Bus Pass</div>
+
+                {% if user.is_staff or user.profile.role == 'admin' %}
+                {# ── Admin view: show info only, no time-window gate ── #}
+                {% if bus.is_available %}
+                <p style="color:#4a5568;font-size:0.9rem;margin-bottom:1.1rem">
+                    Secure your seat on Bus {{ bus.bus_number }}. Fare is calculated based on your boarding point.
+                </p>
+                <div
+                    style="background:#f0f7ff;border:1px solid #bee3f8;border-radius:10px;padding:0.85rem 1.1rem;margin-bottom:1.1rem">
+                    <div style="display:flex;justify-content:space-between;font-size:0.88rem;margin-bottom:0.4rem">
+                        <span style="color:#4a5568">Fare Range</span>
+                <strong style="color:#0d2137">₹15 – ₹150</strong>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.88rem">
+                        <span style="color:#4a5568">Validity</span>
+                        <strong style="color:#0d2137">Till Dec 31, 2025</strong>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.88rem;margin-top:0.4rem">
+                        <span style="color:#4a5568">Bus Type</span>
+                        <strong style="color:#0d2137">{{ bus.get_bus_type_display }}</strong>
+                    </div>
+                </div>
+                <div style="text-align:center;padding:0.75rem;background:#f0f7ff;border-radius:8px;color:#1e3a5f;font-size:0.88rem">
+                    🔒 Admin View Only &mdash; booking is restricted to students &amp; staff.
+                </div>
+                {% else %}
+                <div style="text-align:center;padding:2rem">
+                    <div style="font-size:2.5rem;margin-bottom:0.75rem">&#128683;</div>
+                    <p style="color:#c0392b;font-weight:700;font-size:1rem">This bus is fully occupied</p>
+                    <p style="color:#4a5568;font-size:0.87rem;margin-top:0.4rem">
+                        Please check other buses on this route.
+                    </p>
+                </div>
+                {% endif %}
+
+                {% else %}
+                {# ── Student/Staff view: time-window gated ── #}
+                {% if not is_within_window %}
+                <div class="alert alert-warning" style="margin-bottom:1rem">
+                    Booking is only available Mon–Sat between 9:00 AM and 3:10 PM IST. Sundays are closed.
+                </div>
+                {% endif %}
+
+                {% if bus.is_available %}
+                <p style="color:#4a5568;font-size:0.9rem;margin-bottom:1.1rem">
+                    Secure your seat on Bus {{ bus.bus_number }}. Fare is calculated based on your boarding point.
+                </p>
+                <div
+                    style="background:#f0f7ff;border:1px solid #bee3f8;border-radius:10px;padding:0.85rem 1.1rem;margin-bottom:1.1rem">
+                    <div style="display:flex;justify-content:space-between;font-size:0.88rem;margin-bottom:0.4rem">
+                        <span style="color:#4a5568">Fare Range</span>
+                <strong style="color:#0d2137">₹15 – ₹150</strong>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.88rem">
+                        <span style="color:#4a5568">Validity</span>
+                        <strong style="color:#0d2137">Till Dec 31, 2025</strong>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.88rem;margin-top:0.4rem">
+                        <span style="color:#4a5568">Bus Type</span>
+                        <strong style="color:#0d2137">{{ bus.get_bus_type_display }}</strong>
+                    </div>
+                </div>
+                {% if is_within_window %}
+                <a href="{% url 'booking' bus.id %}" class="btn btn-accent btn-lg"
+                    style="display:block;text-align:center;width:100%;padding:13px;font-size:1rem">
+                    Apply for Bus Pass
+                </a>
+                {% else %}
+                <button class="btn btn-primary btn-lg" style="width:100%;opacity:0.7;cursor:not-allowed" disabled>
+                    Outside Booking Window
+                </button>
+                {% endif %}
+                {% else %}
+                <div style="text-align:center;padding:2rem">
+                    <div style="font-size:2.5rem;margin-bottom:0.75rem">&#128683;</div>
+                    <p style="color:#c0392b;font-weight:700;font-size:1rem">This bus is fully occupied</p>
+                    <p style="color:#4a5568;font-size:0.87rem;margin-top:0.4rem">
+                        Please check other buses on this route.
+                    </p>
+                </div>
+                {% endif %}
+                {% endif %}
+            </div>
+
+            {% if user.is_staff or user.profile.role == 'admin' %}
+            <!-- Admin: Edit Bus & Fares Module -->
+            <div style="margin-top:1.5rem;background:#ffffff;border-radius:14px;
+                        border:1px solid #fcd34d;
+                        box-shadow:0 2px 16px rgba(180,130,10,0.08);overflow:hidden">
+                <div style="background:linear-gradient(135deg,#92400e 0%,#d97706 100%);
+                            padding:0.85rem 1.25rem;display:flex;align-items:center;gap:0.6rem">
+                    <span style="font-size:1.2rem">⚙️</span>
+                    <span style="color:#ffffff !important;font-weight:700;font-size:0.95rem;letter-spacing:0.3px">Admin Controls</span>
+                </div>
+                <div style="padding:1rem 1.25rem;display:flex;flex-direction:column;gap:0.6rem">
+                    <a href="{% url 'admin_edit_bus' bus.id %}"
+                       style="display:flex;align-items:center;gap:0.6rem;padding:0.7rem 1rem;
+                              background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;
+                              text-decoration:none;color:#92400e;font-weight:600;font-size:0.88rem">
+                        ✏️ Edit Bus Information &amp; Fares
+                    </a>
+                    <a href="{% url 'bus_qr' bus.id %}"
+                       style="display:flex;align-items:center;gap:0.6rem;padding:0.7rem 1rem;
+                              background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;
+                              text-decoration:none;color:#92400e;font-weight:600;font-size:0.88rem">
+                        🖨️ Print Bus QR Sticker
+                    </a>
+                    <a href="{% url 'reset_occupancy' bus.id %}"
+                       style="display:flex;align-items:center;gap:0.6rem;padding:0.7rem 1rem;
+                              background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;
+                              text-decoration:none;color:#991b1b;font-weight:600;font-size:0.88rem">
+                        🔄 Reset Seat Occupancy
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not user.is_staff and user.profile.role != 'admin' %}
+            <!-- Boarding: scan physical bus QR (students only) -->
+            <div class="card">
+                <div class="card-title" style="margin-bottom:0.75rem">📲 How to Board</div>
+                <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:1rem">
+                    When you board the bus, scan the <strong>physical QR code sticker</strong>
+                    inside the bus using your phone's camera. It will mark your attendance
+                    and update the seat count automatically.
+                </p>
+                <a href="{% url 'scan_attendance' %}" class="btn btn-primary btn-block">
+                    📷 Open QR Scanner
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Route Stops -->
+    {% if bus.route and bus.route.get_stops_list %}
+    <div class="card" style="margin-top:1.5rem">
+        <div class="card-title" style="margin-bottom:1rem">🛣️ Route Stops</div>
+        <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
+            {% for stop in bus.route.get_stops_list %}
+            <span class="badge badge-primary" style="font-size:0.85rem;padding:0.4rem 0.9rem">
+                {% if forloop.first %}🟢{% elif forloop.last %}🔴{% else %}🔵{% endif %} {{ stop }}
+            </span>
+            {% if not forloop.last %}
+            <span style="color:var(--text-muted)">→</span>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function(){var f=document.getElementById('seat-fill');if(f)f.style.width=f.dataset.pct+'%';})();
+</script>
+{% endblock %}

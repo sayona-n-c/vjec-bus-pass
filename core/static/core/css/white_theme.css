@@ -1,0 +1,649 @@
+/*
+ * white_theme.css  |  Premium Minimalist – VJEC Bus Pass App
+ * ─────────────────────────────────────────────────────────────
+ * WCAG AA contrast: all text ≥ 4.5:1 against #FFFFFF background.
+ * Overrides the dark (style.css) theme for all post-login pages.
+ * The login page (standalone HTML) is NOT affected.
+ */
+
+/* ══════════════════════════════════════════
+   1. FOUNDATION — body, scrollbar, selection
+   ══════════════════════════════════════════ */
+html,
+body {
+    background-color: #ffffff !important;
+    color: #1a1a1a !important;
+}
+
+::selection {
+    background: #1e3a5f;
+    color: #fff;
+}
+
+::-webkit-scrollbar-track {
+    background: #f0f2f5 !important;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #1e3a5f !important;
+}
+
+/* ══════════════════════════════════════════
+   2. LAYOUT containers
+   ══════════════════════════════════════════ */
+main {
+    background-color: #f7f9fc !important;
+    color: #1a1a1a !important;
+    min-height: calc(100vh - 65px - 56px);
+    padding-bottom: 2rem;
+}
+
+.main-content,
+.container,
+.content-wrapper {
+    color: #1a1a1a !important;
+}
+
+/* ══════════════════════════════════════════
+   3. TYPOGRAPHY — headings & body text
+   ══════════════════════════════════════════ */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: #0d2137 !important;
+    /* deep navy */
+    font-weight: 700;
+}
+
+p,
+span,
+li,
+td,
+th,
+label,
+div {
+    color: #1a1a1a !important;
+}
+
+/* Muted / secondary text — still readable */
+.text-muted,
+small,
+.form-help,
+.hint,
+[style*="text-muted"],
+[style*="color:var(--text-muted)"],
+[style*="color: var(--text-muted)"],
+[style*="opacity:0.8"],
+[style*="opacity: 0.8"] {
+    color: #4a5568 !important;
+    opacity: 1 !important;
+}
+
+/* ══════════════════════════════════════════
+   4. CARDS  — white with border + shadow
+   ══════════════════════════════════════════ */
+.card {
+    background-color: #ffffff !important;
+    border: 1px solid #e0e0e0 !important;
+    border-radius: 14px !important;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.03) !important;
+    color: #1a1a1a !important;
+}
+
+.card-title {
+    color: #0d2137 !important;
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.3px;
+    border-bottom: 2px solid #e8eef6;
+    padding-bottom: 0.65rem;
+    margin-bottom: 1rem;
+}
+
+/* ══════════════════════════════════════════
+   5. NAVBAR — stays dark, text FORCE WHITE
+   ══════════════════════════════════════════ */
+.navbar {
+    color: #ffffff !important;
+}
+
+/* Brand name "VIMAL JYOTHI" */
+.navbar-brand,
+.navbar-brand span,
+.navbar-brand>div>span:first-child {
+    color: #ffffff !important;
+    font-weight: 800 !important;
+    font-size: 1rem !important;
+}
+
+/* Sub-text "Bus Pass System" */
+.navbar-brand small,
+.navbar-brand>div>small {
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-weight: 400 !important;
+}
+
+/* Nav links */
+.navbar .nav-link,
+.navbar a,
+.navbar span {
+    color: rgba(255, 255, 255, 0.88) !important;
+}
+
+.navbar .nav-link.active,
+.navbar a.active {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+}
+
+/* Nav user avatar circle text */
+.navbar .nav-user .avatar-circle {
+    color: #ffffff !important;
+}
+
+.navbar .nav-user>span {
+    color: rgba(255, 255, 255, 0.88) !important;
+}
+
+/* ══════════════════════════════════════════
+   6. FORM CONTROLS
+   ══════════════════════════════════════════ */
+.form-control,
+.form-select,
+select,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+textarea {
+    background-color: #f9fafb !important;
+    color: #111827 !important;
+    border: 1.5px solid #d0d7e2 !important;
+    border-radius: 9px !important;
+}
+
+.form-control:focus,
+.form-select:focus,
+select:focus,
+input:focus,
+textarea:focus {
+    background-color: #ffffff !important;
+    border-color: #1e3a5f !important;
+    box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.12) !important;
+    outline: none !important;
+}
+
+/* Disabled fields */
+.form-control:disabled,
+input:disabled {
+    background-color: #f1f5f9 !important;
+    color: #374151 !important;
+    border-color: #e2e8f0 !important;
+}
+
+/* Select option items */
+select option {
+    background: #fff !important;
+    color: #111 !important;
+}
+
+label,
+.form-label {
+    color: #1e3a5f !important;
+    font-weight: 600 !important;
+    font-size: 0.85rem;
+}
+
+.form-error {
+    color: #c0392b !important;
+    font-size: 0.82rem;
+    margin-top: 4px;
+}
+
+/* ══════════════════════════════════════════
+   7. BUTTONS — vibrant, high-contrast
+   ══════════════════════════════════════════ */
+
+/* Primary (navy) */
+.btn-primary {
+    background: linear-gradient(135deg, #1e3a5f, #265f9e) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 3px 12px rgba(30, 58, 95, 0.35) !important;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #162d4a, #1e4f88) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 5px 16px rgba(30, 58, 95, 0.4) !important;
+}
+
+/* Accent / CTA (Forest Green) — Apply / Book / Download */
+.btn-accent,
+button[type="submit"],
+.btn-success {
+    background: linear-gradient(135deg, #1b5e20, #2e7d32) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 3px 12px rgba(27, 94, 32, 0.35) !important;
+    font-weight: 700 !important;
+}
+
+.btn-accent:hover,
+button[type="submit"]:hover,
+.btn-success:hover {
+    background: linear-gradient(135deg, #145214, #256625) !important;
+    transform: translateY(-1px);
+}
+
+/* Outline variant */
+.btn-outline {
+    background: transparent !important;
+    color: #1e3a5f !important;
+    border: 2px solid #1e3a5f !important;
+}
+
+.btn-outline:hover {
+    background: #1e3a5f !important;
+    color: #fff !important;
+}
+
+/* Danger */
+.btn-danger {
+    background: #c0392b !important;
+    color: #fff !important;
+    border: none !important;
+}
+
+/* Small buttons in navbar stay as is */
+.navbar .btn-outline {
+    color: rgba(255, 255, 255, 0.85) !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
+    background: transparent !important;
+}
+
+.navbar .btn-outline:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: #fff !important;
+}
+
+/* ══════════════════════════════════════════
+   8. BADGES — distinct professional colors
+   ══════════════════════════════════════════ */
+.badge {
+    font-weight: 700 !important;
+    letter-spacing: 0.4px;
+}
+
+/* College Bus — Deep Blue */
+.badge-primary {
+    background: #1e3a5f !important;
+    color: #fff !important;
+}
+
+/* Tourist Bus — Warm Amber */
+.badge-warning {
+    background: #b45309 !important;
+    color: #fff !important;
+    border: none !important;
+}
+
+/* Available / Success — Emerald Green */
+.badge-success {
+    background: #065f46 !important;
+    color: #fff !important;
+    border: none !important;
+}
+
+/* Danger */
+.badge-danger {
+    background: #991b1b !important;
+    color: #fff !important;
+    border: none !important;
+}
+
+/* Info */
+.badge-info {
+    background: #1e40af !important;
+    color: #fff !important;
+    border: none !important;
+}
+
+/* ══════════════════════════════════════════
+   9. TABLES — Pure White Theme
+   ══════════════════════════════════════════ */
+table {
+    background: #ffffff !important;
+    color: #1a1a1a !important;
+    border-radius: 10px;
+    overflow: hidden;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+thead,
+.table-head {
+    background: #0d2137 !important;
+}
+
+thead th {
+    background: #0d2137 !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    padding: 0.85rem 1.1rem;
+    border: none !important;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+}
+
+tbody tr {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e8eef6 !important;
+    transition: background 0.18s ease;
+}
+
+tbody tr:last-child {
+    border-bottom: none !important;
+}
+
+tbody tr:hover {
+    background: #f0f7ff !important;
+}
+
+tbody td {
+    background: transparent !important;
+    color: #1a1a1a !important;
+    padding: 0.85rem 1.1rem;
+    font-size: 0.9rem;
+}
+
+/* Text elements inside table cells */
+tbody td span,
+tbody td strong,
+tbody td code {
+    color: #1a1a1a !important;
+}
+
+/* Status badge colours inside table — keep their own colour */
+tbody td .badge {
+    color: #ffffff !important;
+}
+
+/* Links in table cells */
+tbody td a:not(.btn) {
+    color: #1e3a5f !important;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+tbody td a:not(.btn):hover {
+    color: #265f9e !important;
+    text-decoration: underline;
+}
+
+/* Table wrapper border */
+.table-wrapper {
+    border: 1px solid #e0e0e0 !important;
+    border-radius: 14px !important;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+
+/* ══════════════════════════════════════════
+   10. ALERTS / MESSAGES
+   ══════════════════════════════════════════ */
+.alert {
+    border-radius: 10px !important;
+    font-weight: 500;
+}
+
+.alert-info {
+    background: #e8f4fd !important;
+    color: #0c4a7a !important;
+    border-left: 4px solid #2196f3 !important;
+}
+
+.alert-success {
+    background: #eafaf1 !important;
+    color: #155724 !important;
+    border-left: 4px solid #28a745 !important;
+}
+
+.alert-warning {
+    background: #fffbea !important;
+    color: #7d4e00 !important;
+    border-left: 4px solid #ffc107 !important;
+}
+
+.alert-error,
+.alert-danger {
+    background: #fdf0f0 !important;
+    color: #7b1c1c !important;
+    border-left: 4px solid #dc3545 !important;
+}
+
+/* ══════════════════════════════════════════
+   11. ROUTE & BUS CARDS
+   ══════════════════════════════════════════ */
+.route-card,
+.bus-card,
+.stat-card {
+    background: #ffffff !important;
+    border: 1px solid #e0e0e0 !important;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06) !important;
+    color: #1a1a1a !important;
+}
+
+.route-card-header,
+.bus-card-header {
+    background: linear-gradient(135deg, #0d2137, #1e3a5f) !important;
+    color: #fff !important;
+    border-radius: 12px 12px 0 0;
+}
+
+.route-card-header h3,
+.route-card-header p,
+.route-card-header span,
+.bus-card-header h3,
+.bus-card-header p,
+.bus-card-header span {
+    color: #fff !important;
+}
+
+.route-card-body p,
+.route-card-body span,
+.bus-card-body p,
+.bus-card-body span {
+    color: #374151 !important;
+}
+
+/* Route number circle */
+.route-number {
+    background: #1e3a5f !important;
+    color: #fff !important;
+}
+
+/* Stop dots */
+.stop-item span {
+    color: #374151 !important;
+}
+
+.stop-dot {
+    background: #2e7d32 !important;
+}
+
+/* ══════════════════════════════════════════
+   12. SEAT BAR (occupancy)
+   ══════════════════════════════════════════ */
+.seat-bar-track {
+    background: #e2e8f0 !important;
+}
+
+/* .seat-bar-fill keeps its own color from style.css — no override needed */
+
+/* Seat count text */
+[style*="81c784"],
+[style*="#81c784"] {
+    color: #1b5e20 !important;
+}
+
+[style*="ef9a9a"],
+[style*="#ef9a9a"] {
+    color: #b71c1c !important;
+}
+
+/* ══════════════════════════════════════════
+   13. DASHBOARD STATS
+   ══════════════════════════════════════════ */
+.stat-card {
+    background: #fff !important;
+    border: 1px solid #e0e0e0 !important;
+}
+
+.stat-value {
+    color: #0d2137 !important;
+    font-size: 2.2rem !important;
+    font-weight: 800 !important;
+}
+
+.stat-label {
+    color: #4a5568 !important;
+    font-size: 0.85rem !important;
+}
+
+/* ══════════════════════════════════════════
+   14. PAGE HEADER sections
+   ══════════════════════════════════════════ */
+.page-header h1,
+.page-header h2 {
+    color: #0d2137 !important;
+}
+
+.page-header p {
+    color: #4a5568 !important;
+}
+
+/* Inline style overrides for --text-muted used in templates */
+[style*="var(--text-muted)"] {
+    color: #4a5568 !important;
+}
+
+[style*="var(--accent-light)"] {
+    color: #1565c0 !important;
+}
+
+/* ══════════════════════════════════════════
+   15. BOOKING PAGE — fare preview box
+   ══════════════════════════════════════════ */
+.fare-preview-box {
+    background: #f0f7ff !important;
+    border: 2px solid #1e3a5f !important;
+    border-radius: 12px;
+    padding: 1.1rem 1.4rem;
+    margin-top: 0.5rem;
+}
+
+.fare-preview-box .fare-label {
+    color: #4a5568 !important;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.fare-preview-box .fare-amount {
+    color: #0d2137 !important;
+    font-size: 2rem;
+    font-weight: 800;
+    font-family: 'Poppins', sans-serif;
+}
+
+.fare-preview-box .fare-note {
+    color: #4a5568 !important;
+    font-size: 0.78rem;
+    margin-top: 4px;
+}
+
+/* ══════════════════════════════════════════
+   16. DIGITAL PASS — dark card stays dark
+   ══════════════════════════════════════════ */
+/* .pass-card has its own dark design — do NOT override with white theme rules */
+
+/* But the page around the pass should be white */
+.main-content .fade-up>h1,
+.main-content .fade-up>p {
+    color: #0d2137 !important;
+}
+
+/* ══════════════════════════════════════════
+   17. FOOTER
+   ══════════════════════════════════════════ */
+footer {
+    background: #0d2137 !important;
+    color: #c7d2fe !important;
+    border-top: 3px solid #1e3a5f !important;
+}
+
+footer p,
+footer span,
+footer a {
+    color: #c7d2fe !important;
+}
+
+/* ══════════════════════════════════════════
+   18. MAP PAGE
+   ══════════════════════════════════════════ */
+#map {
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+}
+
+/* ══════════════════════════════════════════
+   19. ADMIN DASHBOARD — keep headings dark
+   ══════════════════════════════════════════ */
+.admin-header h1 {
+    color: #0d2137 !important;
+}
+
+/* ══════════════════════════════════════════
+   20. PAYMENT PAGE
+   ══════════════════════════════════════════ */
+.payment-amount {
+    color: #0d2137 !important;
+    font-weight: 800;
+}
+
+.payment-ref {
+    color: #374151 !important;
+}
+
+/* ══════════════════════════════════════════
+   21. KEY DATA — never allow light text on white
+   ══════════════════════════════════════════ */
+/* Catch-all: any element that might have inherited white text */
+.main-content strong,
+.main-content b,
+.main-content code,
+.main-content .amount,
+.main-content .pass-id,
+main strong,
+main b,
+main code {
+    color: #0d2137 !important;
+}
+
+/* ══════════════════════════════════════════
+   22. COORDINATOR card (bus detail)
+   ══════════════════════════════════════════ */
+.card table td:first-child {
+    color: #4a5568 !important;
+}
+
+.card table td:last-child {
+    color: #0d2137 !important;
+}

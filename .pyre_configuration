@@ -1,0 +1,10 @@
+{
+  "site_package_search_strategy": "pep561",
+  "search_path": ["."],
+  "python_interpreter": "C:/Users/HP/ss/venv/Scripts/python.exe",
+  "exclude": [
+    ".*/migrations/.*",
+    ".*/venv/.*"
+  ],
+  "ignore_all_errors": true
+}

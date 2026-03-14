@@ -1,0 +1,91 @@
+{% extends 'core/base.html' %}
+{% block title %}Reserve for Faculty{% endblock %}
+
+{% block content %}
+<div class="main-content fade-up">
+    <div class="page-header">
+        <h1>🪑 Reserve Seat for Faculty</h1>
+        <p>Admin-only · Creates a ₹0 Faculty Reserve pass and decrements bus seat count</p>
+    </div>
+
+    <div class="grid-2">
+        <!-- Form Card -->
+        <div class="card">
+            <div class="card-title" style="margin-bottom:1.5rem">📋 Reservation Details</div>
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label class="form-label">Bus *</label>
+                    {{ form.bus }}
+                    {% if form.bus.errors %}
+                    <div class="form-error">{{ form.bus.errors.0 }}</div>
+                    {% endif %}
+                    <div class="form-help">Only active buses shown. Seat count will be decremented.</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Faculty Name *</label>
+                    {{ form.faculty_name }}
+                    {% if form.faculty_name.errors %}
+                    <div class="form-error">{{ form.faculty_name.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Boarding Point</label>
+                    {{ form.boarding_point }}
+                    {% if form.boarding_point.errors %}
+                    <div class="form-error">{{ form.boarding_point.errors.0 }}</div>
+                    {% endif %}
+                    <div class="form-help">Optional – select the faculty's boarding stop.</div>
+                </div>
+
+                <div
+                    style="background:rgba(46,125,50,0.15);border:1px solid rgba(46,125,50,0.4);border-radius:10px;padding:1rem;margin-bottom:1.5rem">
+                    <div style="font-size:0.82rem;font-weight:600;margin-bottom:0.3rem">ℹ️ Faculty Reservation Rules
+                    </div>
+                    <ul style="font-size:0.82rem;margin:0;padding-left:1.2rem;line-height:1.8">
+                        <li>Pass is created instantly — <strong>no payment required</strong></li>
+                        <li>Amount is set to <strong>₹0</strong> and marked <em>"Faculty Reserve"</em></li>
+                        <li>The bus seat count is decremented immediately</li>
+                        <li>Pass is valid only for today's date</li>
+                    </ul>
+                </div>
+
+                <div style="display:flex;gap:1rem;flex-wrap:wrap">
+                    <button type="submit" class="btn btn-accent btn-lg">🪑 Confirm Reservation</button>
+                    <a href="{% url 'admin_dashboard' %}" class="btn btn-outline btn-lg">↩ Cancel</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Bus Seat Overview -->
+        <div class="card">
+            <div class="card-title" style="margin-bottom:1.25rem">🚌 Bus Availability</div>
+            <div
+                style="display:flex;flex-direction:column;gap:0.75rem;max-height:500px;overflow-y:auto;padding-right:0.25rem">
+                {% for bus in buses %}
+                <div
+                    style="display:flex;align-items:center;justify-content:space-between;background:rgba(26,35,126,0.15);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:0.75rem 1rem">
+                    <div>
+                        <strong style="font-size:1rem">Bus {{ bus.bus_number }}</strong>
+                        <div style="font-size:0.8rem;opacity:0.7">{{ bus.route.name|default:"No Route" }}</div>
+                    </div>
+                    <div style="text-align:right">
+                        <div
+                            style="font-size:1.2rem;font-weight:700;color:{% if bus.available_seats > 10 %}#81c784{% elif bus.available_seats > 0 %}#ffd54f{% else %}#ef9a9a{% endif %}">
+                            {{ bus.available_seats }} seats
+                        </div>
+                        <div style="font-size:0.75rem;opacity:0.6">{{ bus.current_occupancy }}/{{ bus.capacity }}
+                            occupied</div>
+                    </div>
+                </div>
+                {% empty %}
+                <p style="text-align:center;opacity:0.6">No active buses found.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

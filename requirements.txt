@@ -1,0 +1,5 @@
+Django==6.0.2
+mysqlclient==2.2.8
+Pillow==12.1.1
+qrcode[pil]==8.2
+python-decouple==3.8

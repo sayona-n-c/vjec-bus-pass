@@ -1,0 +1,70 @@
+{% extends 'core/base.html' %}
+{% block title %}Attendance Log – {{ filter_date }}{% endblock %}
+
+{% block content %}
+<div class="main-content fade-up">
+    <div class="page-header">
+        <h1>📋 Attendance Log</h1>
+        <p>Today's boarding and QR scan records</p>
+    </div>
+
+    <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;margin-bottom:1.5rem">
+        <form method="get" style="display:flex;gap:0.75rem;align-items:center">
+            <input type="date" name="date" value="{{ filter_date }}" max="{{ today }}" class="form-control"
+                style="width:auto;padding:0.5rem 0.85rem" />
+            <button type="submit" class="btn btn-primary btn-sm">🔍 Filter</button>
+        </form>
+        <span class="badge badge-info" style="padding:0.4rem 1rem">
+            {{ records.count }} scan{{ records.count|pluralize }} on {{ filter_date }}
+        </span>
+        <div style="margin-left:auto;display:flex;gap:0.5rem;flex-wrap:wrap">
+            {% for bus in buses %}
+            <a href="{% url 'bus_qr' bus.id %}" class="btn btn-outline btn-sm" target="_blank">
+                🖨️ QR Bus {{ bus.bus_number }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Student Name</th>
+                    <th>VML No</th>
+                    <th>Bus</th>
+                    <th>Scanned At</th>
+                    <th>Pass ID</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rec in records %}
+                <tr>
+                    <td style="color:#9fa8da;font-size:0.82rem">{{ forloop.counter }}</td>
+                    <td><strong>{{ rec.user.get_full_name|default:rec.user.username }}</strong></td>
+                    <td>{{ rec.user.profile.vml_no|default:"—" }}</td>
+                    <td><strong style="color:#93c5fd">Bus {{ rec.bus.bus_number }}</strong></td>
+                    <td style="font-size:0.82rem;white-space:nowrap">
+                        {{ rec.scanned_at|date:"d M Y" }}<br>
+                        <span style="opacity:0.7">{{ rec.scanned_at|time:"h:i A" }}</span>
+                    </td>
+                    <td>
+                        {% if rec.bus_pass %}
+                        <code style="font-size:0.8rem;color:#93c5fd">{{ rec.bus_pass.pass_id_short }}</code>
+                        {% else %}<span style="opacity:0.5">—</span>{% endif %}
+                    </td>
+                    <td><span class="badge badge-success">Present</span></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align:center;padding:2rem;opacity:0.5">No attendance records for {{
+                        filter_date }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

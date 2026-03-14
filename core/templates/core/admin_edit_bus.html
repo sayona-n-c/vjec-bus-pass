@@ -1,0 +1,159 @@
+{% extends 'core/base.html' %}
+{% block title %}Edit Bus {{ bus.bus_number }}{% endblock %}
+
+{% block content %}
+<div class="main-content fade-up">
+    <div class="page-header" style="margin-bottom:1.5rem">
+        <h1 style="color:#0d2137">⚙️ Edit Bus {{ bus.bus_number }}</h1>
+        <p style="color:#4a5568;font-size:0.9rem">
+            Update bus details and boarding point fares. Changes save to the database immediately.
+        </p>
+    </div>
+
+    <form method="POST" style="max-width:900px">
+        {% csrf_token %}
+
+        <!-- ───── Bus Information ───── -->
+        <div style="margin-bottom:2rem;background:#ffffff;border-radius:14px;
+                    border:1px solid #c7d7f7;
+                    box-shadow:0 2px 16px rgba(30,58,95,0.08);overflow:hidden">
+            <div style="background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);
+                        padding:0.85rem 1.25rem;display:flex;align-items:center;gap:0.6rem">
+                <span style="font-size:1.2rem">🚌</span>
+                <span style="color:#ffffff !important;font-weight:700;font-size:0.95rem">Bus Information</span>
+            </div>
+            <div style="padding:1.25rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                <div>
+                    <label style="display:block;font-size:0.82rem;font-weight:600;color:#4a5568;margin-bottom:0.3rem">
+                        Bus Number</label>
+                    <input type="text" name="bus_number" value="{{ bus.bus_number }}"
+                           style="width:100%;padding:0.6rem 0.8rem;border:1px solid #cbd5e0;border-radius:8px;
+                                  font-size:0.9rem;color:#1a1a1a;background:#f8fafc" />
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.82rem;font-weight:600;color:#4a5568;margin-bottom:0.3rem">
+                        Capacity</label>
+                    <input type="number" name="capacity" value="{{ bus.capacity }}" min="1"
+                           style="width:100%;padding:0.6rem 0.8rem;border:1px solid #cbd5e0;border-radius:8px;
+                                  font-size:0.9rem;color:#1a1a1a;background:#f8fafc" />
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.82rem;font-weight:600;color:#4a5568;margin-bottom:0.3rem">
+                        Bus Type</label>
+                    <select name="bus_type"
+                            style="width:100%;padding:0.6rem 0.8rem;border:1px solid #cbd5e0;border-radius:8px;
+                                   font-size:0.9rem;color:#1a1a1a;background:#f8fafc">
+                        <option value="college" {% if bus.bus_type == 'college' %}selected{% endif %}>College Bus</option>
+                        <option value="tourist" {% if bus.bus_type == 'tourist' %}selected{% endif %}>Tourist Bus</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.82rem;font-weight:600;color:#4a5568;margin-bottom:0.3rem">
+                        Route</label>
+                    <select name="route"
+                            style="width:100%;padding:0.6rem 0.8rem;border:1px solid #cbd5e0;border-radius:8px;
+                                   font-size:0.9rem;color:#1a1a1a;background:#f8fafc">
+                        <option value="">— No Route —</option>
+                        {% for r in routes %}
+                        <option value="{{ r.id }}" {% if bus.route_id == r.id %}selected{% endif %}>{{ r.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:0.6rem;padding-top:0.5rem">
+                    <input type="checkbox" name="is_active" id="is_active"
+                           {% if bus.is_active %}checked{% endif %}
+                           style="width:18px;height:18px" />
+                    <label for="is_active" style="font-size:0.88rem;font-weight:600;color:#4a5568;cursor:pointer">
+                        Bus is Active</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- ───── Boarding Point Fares ───── -->
+        <div style="margin-bottom:2rem;background:#ffffff;border-radius:14px;
+                    border:1px solid #a7f3d0;
+                    box-shadow:0 2px 16px rgba(5,150,105,0.09);overflow:hidden">
+            <div style="background:linear-gradient(135deg,#065f46 0%,#059669 100%);
+                        padding:0.85rem 1.25rem;display:flex;align-items:center;gap:0.6rem">
+                <span style="font-size:1.2rem">💰</span>
+                <span style="color:#ffffff !important;font-weight:700;font-size:0.95rem">Boarding Point Fares</span>
+            </div>
+            <div style="padding:1.25rem">
+                <p style="color:#4a5568;font-size:0.82rem;margin-bottom:1rem">
+                    Fares are clamped to ₹15 – ₹150. Changes affect all buses sharing these boarding points.
+                </p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+                    {% for bp in boarding_points %}
+                    <div style="display:flex;align-items:center;gap:0.75rem;
+                                padding:0.6rem 0.9rem;background:#f0fdf4;
+                                border:1px solid #bbf7d0;border-radius:8px">
+                        <span style="flex:1;font-size:0.88rem;font-weight:600;color:#065f46">{{ bp.name }}</span>
+                        <div style="display:flex;align-items:center;gap:0.3rem">
+                            <span style="color:#4a5568;font-size:0.85rem">₹</span>
+                            <input type="number" name="fare_{{ bp.id }}" value="{{ bp.fare }}"
+                                   min="15" max="150"
+                                   style="width:70px;padding:0.4rem 0.5rem;border:1px solid #86efac;
+                                          border-radius:6px;font-size:0.88rem;color:#065f46;
+                                          font-weight:700;text-align:center;background:#ffffff" />
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- ───── Coordinator (if assigned) ───── -->
+        {% if coordinator %}
+        <div style="margin-bottom:2rem;background:#ffffff;border-radius:14px;
+                    border:1px solid #fcd34d;
+                    box-shadow:0 2px 16px rgba(180,130,10,0.08);overflow:hidden">
+            <div style="background:linear-gradient(135deg,#92400e 0%,#d97706 100%);
+                        padding:0.85rem 1.25rem;display:flex;align-items:center;gap:0.6rem">
+                <span style="font-size:1.2rem">🧑‍✈️</span>
+                <span style="color:#ffffff !important;font-weight:700;font-size:0.95rem">Bus Coordinator</span>
+            </div>
+            <div style="padding:1.25rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                <div>
+                    <label style="display:block;font-size:0.82rem;font-weight:600;color:#4a5568;margin-bottom:0.3rem">
+                        Name</label>
+                    <input type="text" name="coord_name" value="{{ coordinator.name }}"
+                           style="width:100%;padding:0.6rem 0.8rem;border:1px solid #cbd5e0;border-radius:8px;
+                                  font-size:0.9rem;color:#1a1a1a;background:#f8fafc" />
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.82rem;font-weight:600;color:#4a5568;margin-bottom:0.3rem">
+                        Staff ID</label>
+                    <input type="text" name="coord_staff_id" value="{{ coordinator.staff_id }}"
+                           style="width:100%;padding:0.6rem 0.8rem;border:1px solid #cbd5e0;border-radius:8px;
+                                  font-size:0.9rem;color:#1a1a1a;background:#f8fafc" />
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.82rem;font-weight:600;color:#4a5568;margin-bottom:0.3rem">
+                        Contact</label>
+                    <input type="text" name="coord_contact" value="{{ coordinator.contact|default:'' }}"
+                           style="width:100%;padding:0.6rem 0.8rem;border:1px solid #cbd5e0;border-radius:8px;
+                                  font-size:0.9rem;color:#1a1a1a;background:#f8fafc" />
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- ───── Submit ───── -->
+        <div style="display:flex;gap:1rem;align-items:center">
+            <button type="submit"
+                    style="padding:0.8rem 2rem;background:linear-gradient(135deg,#1e3a5f,#2563eb);
+                           color:#fff;border:none;border-radius:10px;font-size:0.95rem;font-weight:700;
+                           cursor:pointer;letter-spacing:0.3px;
+                           box-shadow:0 4px 14px rgba(37,99,235,0.3);
+                           transition:transform 0.15s,box-shadow 0.15s">
+                💾 Save All Changes
+            </button>
+            <a href="{% url 'bus_detail' bus.id %}"
+               style="padding:0.8rem 1.5rem;color:#4a5568;text-decoration:none;font-size:0.9rem;
+                      border:1px solid #cbd5e0;border-radius:10px">
+                ← Back to Bus Detail
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,1 @@
+Place the UPI QR code image as: upi_qr.png in this directory.\nUPI ID: sayonanc10@oksbi\n

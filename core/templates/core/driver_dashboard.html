@@ -1,0 +1,422 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Driver Dashboard – Bus {{ assigned_bus.bus_number|default:"GPS Tracking" }} | VJEC</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f1729;
+            color: #e8eaf6;
+            min-height: 100vh;
+        }
+
+        .driver-header {
+            background: linear-gradient(135deg, #0d1657, #1a237e);
+            padding: 1.25rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .driver-header h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .driver-header small {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.75rem;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .card {
+            background: #162040;
+            border: 1px solid #2a3a70;
+            border-radius: 16px;
+            padding: 1.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 1.25rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.5rem;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.25s ease;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #16a34a, #22c55e);
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(22, 163, 74, 0.4);
+        }
+
+        .btn-stop {
+            background: linear-gradient(135deg, #c62828, #e53935);
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(198, 40, 40, 0.4);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #2a3a70;
+            color: #e8eaf6;
+        }
+
+        .btn-logout {
+            background: rgba(198, 40, 40, 0.2);
+            border: 1px solid rgba(198, 40, 40, 0.5);
+            color: #ef9a9a;
+            padding: 0.5rem 1rem;
+            font-size: 0.82rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1.1rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .badge-live {
+            background: rgba(22, 163, 74, 0.2);
+            border: 1px solid #16a34a;
+            color: #86efac;
+        }
+
+        .badge-offline {
+            background: rgba(107, 114, 128, 0.2);
+            border: 1px solid #6b7280;
+            color: #9ca3af;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+            font-size: 0.9rem;
+        }
+
+        .info-row:last-child {
+            border: none;
+        }
+
+        .info-label {
+            color: #9fa8da;
+        }
+
+        .info-value {
+            font-weight: 600;
+            color: #fff;
+        }
+
+        #gps-log {
+            background: #0a1040;
+            border-radius: 10px;
+            padding: 1rem;
+            font-size: 0.8rem;
+            color: #9fa8da;
+            font-family: 'Courier New', monospace;
+            max-height: 180px;
+            overflow-y: auto;
+            margin-top: 1rem;
+        }
+
+        .bus-info-card {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: #0f1729;
+            border-radius: 12px;
+            margin-bottom: 1.25rem;
+        }
+
+        .bus-badge {
+            background: linear-gradient(135deg, #f57c00, #ff9800);
+            color: #fff;
+            font-size: 1.3rem;
+            font-weight: 800;
+            padding: 0.75rem 1.25rem;
+            border-radius: 12px;
+            font-family: 'Poppins', sans-serif;
+            box-shadow: 0 4px 16px rgba(245, 124, 0, 0.3);
+        }
+
+        .bus-meta {
+            flex: 1;
+        }
+
+        .bus-meta .bus-route {
+            color: #9fa8da;
+            font-size: 0.85rem;
+        }
+
+        .bus-meta .bus-seats {
+            color: #86efac;
+            font-size: 0.82rem;
+            margin-top: 3px;
+        }
+
+        .no-bus-warning {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #ef9a9a;
+        }
+
+        .no-bus-warning .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="driver-header">
+        <div>
+            <h1>🚌 Driver GPS Interface</h1>
+            <small>VJEC Bus Pass System · {{ request.user.get_full_name|default:request.user.username }}</small>
+        </div>
+        <div class="header-right">
+            {% if assigned_bus %}
+            <span style="background:linear-gradient(135deg,#f57c00,#ff9800);color:#fff;font-weight:800;font-size:1rem;padding:0.45rem 1rem;border-radius:8px;font-family:'Poppins',sans-serif;letter-spacing:0.5px;box-shadow:0 2px 10px rgba(245,124,0,0.4)">
+                Bus {{ assigned_bus.bus_number }}
+            </span>
+            {% endif %}
+            <span id="trip-badge" class="status-badge badge-offline">● Offline</span>
+            <a href="{% url 'logout' %}" class="btn btn-logout" id="logout-btn">🔒 Logout</a>
+        </div>
+    </div>
+
+    <div class="container">
+        {% if assigned_bus %}
+        <!-- Assigned Bus Info -->
+        <div class="card">
+            <div class="card-title">🚌 Your Assigned Bus</div>
+            <div class="bus-info-card">
+                <div class="bus-badge">{{ assigned_bus.bus_number }}</div>
+                <div class="bus-meta">
+                    <div style="font-weight:700;color:#fff;font-size:1.05rem">Bus {{ assigned_bus.bus_number }}</div>
+                    <div class="bus-route">Route: {{ assigned_bus.route.name|default:"No Route Assigned" }}</div>
+                    <div class="bus-seats">🪑 {{ assigned_bus.available_seats }}/{{ assigned_bus.capacity }} seats available</div>
+                </div>
+            </div>
+            <div style="display:flex;gap:1rem;flex-wrap:wrap">
+                <button class="btn btn-start" id="start-btn" onclick="startTrip()">🟢 Start Journey & Share
+                    Location</button>
+                <button class="btn btn-stop" id="stop-btn" onclick="stopTrip()" style="display:none">🔴 End
+                    Journey</button>
+            </div>
+        </div>
+
+        <!-- Live GPS Status -->
+        <div class="card">
+            <div class="card-title">📍 Live GPS Status</div>
+            <div class="info-row">
+                <span class="info-label">Status</span>
+                <span class="info-value" id="trip-status">Not started</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Latitude</span>
+                <span class="info-value" id="disp-lat">—</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Longitude</span>
+                <span class="info-value" id="disp-lng">—</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Speed</span>
+                <span class="info-value" id="disp-speed">—</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Last Update</span>
+                <span class="info-value" id="disp-time">—</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Updates Sent</span>
+                <span class="info-value" id="disp-count">0</span>
+            </div>
+            <div id="gps-log">Waiting for trip to start…</div>
+        </div>
+
+        {% else %}
+        <!-- No Bus Assigned -->
+        <div class="card">
+            <div class="no-bus-warning">
+                <div class="icon">⚠️</div>
+                <h2 style="color:#fff;margin-bottom:0.5rem">No Bus Assigned</h2>
+                <p>Your driver account does not have a bus assigned yet.<br>Please contact the administrator to assign a bus to your account.</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <div style="text-align:center">
+            <a href="{% url 'logout' %}" class="btn btn-outline">🔒 Logout</a>
+        </div>
+    </div>
+
+    {% if assigned_bus %}
+    <script>
+        const ASSIGNED_BUS_ID = {{ assigned_bus.id }};
+        let tripActive = false;
+        let watchId = null;
+        let updateInterval = null;
+        let updateCount = 0;
+        let currentCoords = null;
+
+        function log(msg) {
+            const el = document.getElementById('gps-log');
+            const t = new Date().toLocaleTimeString();
+            el.innerHTML = `[${t}] ${msg}\n` + el.innerHTML;
+        }
+
+        function startTrip() {
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported by this browser/device.');
+                return;
+            }
+
+            tripActive = true;
+            document.getElementById('start-btn').style.display = 'none';
+            document.getElementById('stop-btn').style.display = 'inline-flex';
+            document.getElementById('trip-badge').className = 'status-badge badge-live';
+            document.getElementById('trip-badge').textContent = '● LIVE';
+            document.getElementById('trip-status').textContent = 'Journey Active — sharing location every 30s';
+            document.getElementById('logout-btn').style.display = 'none';
+
+            // Watch position for continuous updates
+            watchId = navigator.geolocation.watchPosition(pos => {
+                currentCoords = pos.coords;
+                const lat = pos.coords.latitude.toFixed(6);
+                const lng = pos.coords.longitude.toFixed(6);
+                const spd = pos.coords.speed ? (pos.coords.speed * 3.6).toFixed(1) + ' km/h' : '—';
+                document.getElementById('disp-lat').textContent = lat;
+                document.getElementById('disp-lng').textContent = lng;
+                document.getElementById('disp-speed').textContent = spd;
+            }, err => {
+                log('GPS error: ' + err.message);
+            }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 });
+
+            // Push to server every 30 seconds
+            pushGPS('start');
+            updateInterval = setInterval(() => pushGPS('update'), 30000);
+        }
+
+        function pushGPS(action) {
+            if (!tripActive || !currentCoords) {
+                // Try to get a fresh position if none yet
+                navigator.geolocation.getCurrentPosition(pos => {
+                    currentCoords = pos.coords;
+                    sendToServer(action || 'update');
+                }, err => log('GPS error: ' + err.message), { enableHighAccuracy: true });
+                return;
+            }
+            sendToServer(action || 'update');
+        }
+
+        function sendToServer(action) {
+            if (!currentCoords) return;
+            const payload = {
+                bus_id: ASSIGNED_BUS_ID,
+                latitude: currentCoords.latitude,
+                longitude: currentCoords.longitude,
+                speed: currentCoords.speed ? currentCoords.speed * 3.6 : 0.0,
+                action: action || 'update',
+            };
+
+            fetch('/api/driver-gps/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            })
+                .then(r => r.json())
+                .then(data => {
+                    updateCount++;
+                    const t = new Date().toLocaleTimeString();
+                    document.getElementById('disp-time').textContent = t;
+                    document.getElementById('disp-count').textContent = updateCount;
+                    log(`✅ GPS sent — ${currentCoords.latitude.toFixed(5)}, ${currentCoords.longitude.toFixed(5)}`);
+                })
+                .catch(e => log('❌ Failed to send GPS: ' + e));
+        }
+
+        function stopTrip() {
+            tripActive = false;
+            if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+            if (updateInterval !== null) clearInterval(updateInterval);
+
+            // Tell server to stop tracking
+            fetch('/api/driver-gps/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bus_id: ASSIGNED_BUS_ID, action: 'stop' }),
+            }).catch(() => {});
+
+            document.getElementById('start-btn').style.display = 'inline-flex';
+            document.getElementById('stop-btn').style.display = 'none';
+            document.getElementById('trip-badge').className = 'status-badge badge-offline';
+            document.getElementById('trip-badge').textContent = '● Offline';
+            document.getElementById('trip-status').textContent = 'Journey ended';
+            document.getElementById('logout-btn').style.display = 'inline-flex';
+            log('🛑 Journey ended by driver.');
+        }
+
+        // Warn if leaving with active trip
+        window.addEventListener('beforeunload', e => {
+            if (tripActive) { e.returnValue = 'Journey is active. Are you sure you want to leave?'; }
+        });
+    </script>
+    {% endif %}
+</body>
+
+</html>

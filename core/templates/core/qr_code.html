@@ -1,0 +1,40 @@
+{% extends 'core/base.html' %}
+{% block title %}My Boarding QR – Bus {{ bus.bus_number }}{% endblock %}
+
+{% block content %}
+<div class="main-content fade-up" style="display:flex;align-items:center;justify-content:center;min-height:70vh">
+    <div>
+        <div class="qr-container">
+            <div style="font-size:1.5rem;font-weight:700;margin-bottom:0.25rem;color:var(--white)">📲 Boarding QR Code
+            </div>
+            <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:1.5rem">
+                Show this to the scanner when boarding Bus {{ bus.bus_number }}
+            </p>
+            <img src="data:image/png;base64,{{ qr_image }}" alt="Boarding QR Code" />
+            <div style="margin-top:1.5rem">
+                <div class="bus-number-badge" style="font-size:1rem;display:inline-block">BUS {{ bus.bus_number }}</div>
+            </div>
+            <div style="margin-top:0.75rem;font-size:0.88rem;color:var(--text-muted)">
+                {{ profile.display_name }} &nbsp;|&nbsp;
+                {% if profile.vml_no %}{{ profile.vml_no }}{% else %}{{ profile.role|capfirst }}{% endif %}
+            </div>
+            <div style="margin-top:0.5rem;font-size:0.75rem;color:rgba(159,168,218,0.4)">
+                Token: {{ profile.qr_token }}
+            </div>
+        </div>
+
+        <div style="text-align:center;margin-top:1.5rem">
+            <div class="card" style="padding:1rem 1.5rem;max-width:400px;margin:0 auto;font-size:0.88rem">
+                <p style="color:var(--text-muted)">
+                    ⚡ This QR records your attendance when scanned.<br />
+                    Each scan updates the bus seat count in real time.
+                </p>
+            </div>
+            <div style="margin-top:1rem;display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap">
+                <a href="{% url 'bus_detail' bus.id %}" class="btn btn-outline">← Back to Bus</a>
+                <button onclick="window.print()" class="btn btn-primary">🖨️ Print QR</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

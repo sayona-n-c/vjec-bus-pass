@@ -1,0 +1,334 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Complete Payment – Bus Pass{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* ── Payment Page: Solid White Theme ── */
+    body {
+        background: #ffffff !important;
+    }
+
+    .main-content {
+        background: #ffffff;
+    }
+
+    .payment-page-wrapper {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8f9fa;
+        padding: 2rem 1rem;
+    }
+
+    .payment-container {
+        max-width: 500px;
+        width: 100%;
+    }
+
+    /* ── The Card ── */
+    .payment-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 20px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
+        overflow: hidden;
+    }
+
+    /* Card Header */
+    .payment-card-header {
+        background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+        padding: 1.75rem 2rem;
+        text-align: center;
+    }
+
+    .payment-card-header .pay-icon {
+        font-size: 2.8rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .payment-card-header h2 {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #ffffff;
+        margin-bottom: 0.25rem;
+    }
+
+    .payment-card-header p {
+        font-size: 0.88rem;
+        color: rgba(255, 255, 255, 0.75);
+    }
+
+    /* Card Body */
+    .payment-card-body {
+        padding: 2rem;
+    }
+
+    /* Summary Table */
+    .payment-summary {
+        background: #f8faff;
+        border: 1px solid #e6eeff;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 1.75rem;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.85rem 1.25rem;
+        border-bottom: 1px solid #eef1f8;
+    }
+
+    .summary-row:last-child {
+        border-bottom: none;
+        background: #f0f4ff;
+        padding: 1rem 1.25rem;
+    }
+
+    .summary-row .label {
+        font-size: 0.85rem;
+        color: #4a5568;
+        font-weight: 500;
+    }
+
+    .summary-row .value {
+        font-size: 0.9rem;
+        color: #1a202c;
+        font-weight: 600;
+        text-align: right;
+    }
+
+    .summary-row .amount-value {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: #1a237e;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .summary-row .ref-value {
+        font-family: 'Courier New', monospace;
+        font-size: 0.88rem;
+        color: #2d3748;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        background: #e8edf8;
+        padding: 3px 10px;
+        border-radius: 6px;
+    }
+
+    /* Pay Now Button */
+    .btn-pay-now {
+        display: block;
+        width: 100%;
+        padding: 1rem 1.5rem;
+        background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+        color: #ffffff !important;
+        border: none;
+        border-radius: 14px;
+        font-size: 1.05rem;
+        font-weight: 700;
+        font-family: 'Poppins', sans-serif;
+        letter-spacing: 0.5px;
+        text-align: center;
+        text-decoration: none;
+        cursor: pointer;
+        box-shadow: 0 4px 20px rgba(22, 163, 74, 0.35);
+        transition: all 0.25s ease;
+        margin-bottom: 1rem;
+    }
+
+    .btn-pay-now:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 28px rgba(22, 163, 74, 0.45);
+        background: linear-gradient(135deg, #15803d 0%, #16a34a 100%);
+        color: #ffffff !important;
+    }
+
+    /* Confirm / Activate Button */
+    .btn-activate {
+        display: block;
+        width: 100%;
+        padding: 0.9rem 1.5rem;
+        background: #1a237e;
+        color: #ffffff !important;
+        border: none;
+        border-radius: 14px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        text-align: center;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.25s ease;
+    }
+
+    .btn-activate:hover {
+        background: #283593;
+        transform: translateY(-1px);
+        color: #ffffff !important;
+    }
+
+    /* Confirm section (shows after click) */
+    .confirm-section {
+        display: none;
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-top: 1rem;
+        text-align: center;
+    }
+
+    .confirm-section p {
+        color: #15803d;
+        font-size: 0.88rem;
+        margin-bottom: 1rem;
+        font-weight: 500;
+    }
+
+    /* Security note */
+    .security-note {
+        text-align: center;
+        margin-top: 1rem;
+        font-size: 0.78rem;
+        color: #718096;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+    }
+
+    /* Back link */
+    .back-link {
+        text-align: center;
+        margin-top: 1.25rem;
+    }
+
+    .back-link a {
+        color: #718096;
+        font-size: 0.88rem;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+    .back-link a:hover {
+        color: #1a237e;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="payment-page-wrapper">
+    <div class="payment-container">
+
+        <!-- Payment Card -->
+        <div class="payment-card">
+
+            <!-- Header -->
+            <div class="payment-card-header">
+                <div class="pay-icon">💳</div>
+                <h2>Complete Payment</h2>
+                <p>Secure payment for your VJEC Bus Pass</p>
+            </div>
+
+            <!-- Body -->
+            <div class="payment-card-body">
+
+                <!-- Pass Summary -->
+                <div class="payment-summary">
+                    <div class="summary-row">
+                        <span class="label">Pass Reference</span>
+                        <span class="ref-value value">{{ bus_pass.pass_id_short }}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="label">Bus Number</span>
+                        <span class="value">{{ bus_pass.bus.bus_number }}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="label">Route</span>
+                        <span class="value">{{ bus_pass.route.name|default:"—" }}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="label">Boarding Point</span>
+                        <span class="value">{{ bus_pass.boarding_point }}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="label">Validity</span>
+                        <span class="value">{{ bus_pass.valid_from|date:"d M Y" }} (Single Day)</span>
+                    </div>
+                    <!-- Amount row (highlighted) -->
+                    <div class="summary-row">
+                        <span class="label" style="font-size:0.9rem;font-weight:700;color:#1a202c">Total Amount</span>
+                        <span class="amount-value">&#8377;{{ bus_pass.amount_paid }}</span>
+                    </div>
+                </div>
+
+                <!-- UPI QR Code Section -->
+                <div style="text-align:center;margin-bottom:1.75rem;padding:1.25rem;
+                            background:linear-gradient(135deg,#f0f7ff,#e8f0fe);
+                            border:1px solid #c7d7f7;border-radius:16px">
+                    <p style="font-size:0.82rem;color:#4a5568;font-weight:600;margin-bottom:0.85rem;
+                               text-transform:uppercase;letter-spacing:0.8px">
+                        📱 Scan &amp; Pay via UPI
+                    </p>
+                    <div style="display:inline-block;background:#fff;padding:10px;border-radius:12px;
+                                border:2px solid #e2e8f0;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
+                        <img src="{% static 'core/images/upi_qr.png' %}" alt="UPI QR – sayonanc10@oksbi"
+                            style="width:200px;height:200px;display:block;border-radius:6px" />
+                        <p style="display:none;color:#e53e3e;font-size:0.8rem;padding:1rem">QR image not found</p>
+                    </div>
+                    <p style="margin-top:0.75rem;font-size:0.82rem;color:#1a237e;font-weight:700">
+                        UPI ID: <code
+                            style="background:#e8edf8;padding:3px 8px;border-radius:5px">sayonanc10@oksbi</code>
+                    </p>
+                    <p style="font-size:0.76rem;color:#718096;margin-top:4px">
+                        Pay exactly <strong style="color:#1a237e">&#8377;{{ bus_pass.amount_paid }}</strong>
+                        &nbsp;·&nbsp; Enter pass reference <strong>{{ bus_pass.pass_id_short }}</strong> in remarks
+                    </p>
+                </div>
+
+                <!-- Pay Now Button -->
+                <a href="{{ payment_link }}" target="_blank" class="btn-pay-now" id="payBtn">
+                    🔒 Pay Now — &#8377;{{ bus_pass.amount_paid }}
+                </a>
+
+                <!-- After Payment Confirm Section -->
+                <div class="confirm-section" id="confirmSection">
+                    <p>✅ After completing payment on the gateway, click below to activate your pass.</p>
+                    <a href="{% url 'payment_confirm' bus_pass.pass_id %}" class="btn-activate">
+                        ✅ I've Paid – Activate My Pass
+                    </a>
+                </div>
+
+                <!-- Security Note -->
+                <div class="security-note">
+                    🔒 Processed by a secure external payment gateway
+                </div>
+            </div>
+        </div>
+
+        <!-- Back Link -->
+        <div class="back-link">
+            <a href="{% url 'dashboard' %}">← Back to Dashboard</a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const payBtn = document.getElementById('payBtn');
+    const confirmSection = document.getElementById('confirmSection');
+    if (payBtn) {
+        payBtn.addEventListener('click', () => {
+            setTimeout(() => {
+                confirmSection.style.display = 'block';
+            }, 2000);
+        });
+    }
+</script>
+{% endblock %}

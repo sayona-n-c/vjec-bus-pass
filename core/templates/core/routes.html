@@ -1,0 +1,103 @@
+{% extends 'core/base.html' %}
+{% block title %}Bus Routes{% endblock %}
+
+{% block content %}
+<div class="main-content fade-up">
+    <div class="page-header">
+        <h1>🗺️ Available Bus Routes</h1>
+        <p>Select a route to view buses and seat availability</p>
+    </div>
+
+    {% if routes %}
+
+    <!-- ── Route Search Bar ── -->
+    <div style="margin-bottom:1.75rem;position:relative;max-width:520px">
+        <span
+            style="position:absolute;left:1rem;top:50%;transform:translateY(-50%);font-size:1.1rem;pointer-events:none">🔍</span>
+        <input type="text" id="route-search" class="form-control"
+            placeholder="Search by route name or stop (e.g. Panoor, Mattannur…)" autocomplete="off"
+            style="padding-left:2.75rem;font-size:0.95rem;border-radius:12px;height:48px" />
+        <span id="route-count-badge" style="position:absolute;right:1rem;top:50%;transform:translateY(-50%);
+                   background:#1e3a8a;color:#fff;font-size:0.75rem;font-weight:700;
+                   padding:3px 10px;border-radius:999px">
+            {{ routes|length }} routes
+        </span>
+    </div>
+
+    <!-- ── No Results Message ── -->
+    <div id="no-routes-msg" style="display:none;text-align:center;padding:3rem 1rem">
+        <div style="font-size:3rem;margin-bottom:0.75rem">🔎</div>
+        <h3 style="color:var(--white);margin-bottom:0.5rem">No routes found</h3>
+        <p style="color:var(--text-muted)">Try a different route name or boarding point name.</p>
+    </div>
+
+    <div class="grid-3" id="routes-grid">
+        {% for route in routes %}
+        <div class="route-card"
+            data-search="{{ route.name|lower }} {% for stop in route.get_stops_list %}{{ stop|lower }} {% endfor %}">
+            <div class="route-card-header">
+                <div class="route-number">{{ forloop.counter }}</div>
+                <div>
+                    <h3 style="font-size:1.05rem;font-weight:700;margin-bottom:0.2rem">{{ route.name }}</h3>
+                    <p style="font-size:0.8rem;opacity:0.8">{{ route.buses.count }} bus available</p>
+                </div>
+            </div>
+            <div class="route-card-body">
+                {% if route.description %}
+                <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:0.75rem">{{ route.description }}</p>
+                {% endif %}
+                {% if route.stops %}
+                <div class="stops-list">
+                    {% for stop in route.get_stops_list %}
+                    <div class="stop-item">
+                        <div class="stop-dot"></div>
+                        <span>{{ stop }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <a href="{% url 'bus_list' route.id %}" class="btn btn-primary btn-block" style="margin-top:1rem">
+                    🚌 View Buses →
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">🗺️</div>
+        <h3 style="color:var(--white);margin-bottom:0.5rem">No Routes Available</h3>
+        <p>No bus routes have been configured yet. Please check back later or contact admin.</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    (function () {
+        const input = document.getElementById('route-search');
+        const grid = document.getElementById('routes-grid');
+        const noMsg = document.getElementById('no-routes-msg');
+        const badge = document.getElementById('route-count-badge');
+        if (!input || !grid) return;
+
+        const cards = Array.from(grid.querySelectorAll('.route-card'));
+
+        input.addEventListener('input', function () {
+            const q = this.value.trim().toLowerCase();
+            let visible = 0;
+
+            cards.forEach(function (card) {
+                const haystack = card.getAttribute('data-search') || '';
+                const match = !q || haystack.includes(q);
+                card.style.display = match ? '' : 'none';
+                if (match) visible++;
+            });
+
+            badge.textContent = visible + ' route' + (visible !== 1 ? 's' : '');
+            noMsg.style.display = visible === 0 ? 'block' : 'none';
+            grid.style.display = visible === 0 ? 'none' : '';
+        });
+    })();
+</script>
+{% endblock %}

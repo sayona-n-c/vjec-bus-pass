@@ -1,0 +1,668 @@
+{% extends 'core/base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+/* ── Admin Tab System ── */
+.admin-tabs{display:flex;gap:0;border-bottom:2px solid #e2e8f0;margin-bottom:1.5rem;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.admin-tab{padding:0.7rem 1.1rem;font-size:0.82rem;font-weight:600;color:#64748b;cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;white-space:nowrap;user-select:none}
+.admin-tab:hover{color:#1e3a5f;background:rgba(30,58,95,0.04)}
+.admin-tab.active{color:#1e3a5f;border-bottom-color:#2563eb;background:rgba(37,99,235,0.06)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ── Cards & Forms ── */
+.admin-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 2px 12px rgba(30,58,95,0.06);overflow:hidden;margin-bottom:1.5rem}
+.admin-card-header{background:linear-gradient(135deg,#1e3a5f,#2563eb);padding:0.75rem 1.2rem;display:flex;align-items:center;gap:0.5rem}
+.admin-card-header span{color:#fff !important;font-weight:700;font-size:0.9rem}
+.admin-card-body{padding:1.25rem}
+.admin-form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0.9rem}
+.admin-form-group label{display:block;font-size:0.78rem;font-weight:600;color:#4a5568;margin-bottom:0.25rem}
+.admin-form-group input,.admin-form-group select,.admin-form-group textarea{width:100%;padding:0.55rem 0.75rem;border:1px solid #cbd5e0;border-radius:8px;font-size:0.88rem;color:#1a1a1a;background:#f8fafc;font-family:inherit}
+.admin-form-group textarea{min-height:60px;resize:vertical}
+
+/* ── Inline Action Buttons ── */
+.action-btn{padding:0.3rem 0.7rem;border-radius:6px;font-size:0.75rem;font-weight:600;border:none;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem;transition:all .15s}
+.action-btn-edit{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe}
+.action-btn-edit:hover{background:#dbeafe}
+.action-btn-delete{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
+.action-btn-delete:hover{background:#fee2e2}
+.action-btn-qr{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
+.action-btn-reset{background:#fffbeb;color:#d97706;border:1px solid #fde68a}
+.action-btn-reset:hover{background:#fef3c7}
+
+/* ── Status forms inline ── */
+.inline-status-form{display:inline-flex;align-items:center;gap:0.3rem}
+.inline-status-form select{padding:0.2rem 0.4rem;font-size:0.75rem;border-radius:5px;border:1px solid #cbd5e0}
+.inline-status-form button{padding:0.2rem 0.5rem;font-size:0.72rem;border-radius:5px;background:#2563eb;color:#fff;border:none;cursor:pointer;font-weight:600}
+
+/* ── Toggle Form ── */
+.toggle-form{display:none;margin-bottom:1rem;padding:1rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px}
+.toggle-form.show{display:block}
+
+/* ── Submit Button ── */
+.admin-submit{padding:0.6rem 1.5rem;background:linear-gradient(135deg,#1e3a5f,#2563eb);color:#fff;border:none;border-radius:8px;font-size:0.88rem;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(37,99,235,0.25);transition:transform .15s}
+.admin-submit:hover{transform:translateY(-1px)}
+
+/* ── Checkbox ── */
+.admin-check{display:flex;align-items:center;gap:0.5rem;padding-top:0.4rem}
+.admin-check input[type=checkbox]{width:16px;height:16px}
+.admin-check label{font-size:0.82rem;font-weight:600;color:#4a5568;cursor:pointer}
+
+/* ── Filter bar ── */
+.filter-bar{display:flex;gap:0.7rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem}
+.filter-bar input,.filter-bar select{padding:0.45rem 0.7rem;border:1px solid #cbd5e0;border-radius:8px;font-size:0.85rem;background:#f8fafc;color:#1a1a1a}
+.filter-bar button{padding:0.45rem 1rem;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:0.82rem;font-weight:600;cursor:pointer}
+
+/* ── Add button ── */
+.add-toggle-btn{padding:0.5rem 1.2rem;background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;border-radius:8px;font-size:0.85rem;font-weight:700;cursor:pointer;margin-bottom:1rem}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-content fade-up">
+    <div class="page-header">
+        <h1>⚙️ Admin Dashboard</h1>
+        <p>Manage buses, routes, users, passes, attendance, and GPS logs</p>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="admin-stat-row" style="margin-bottom:1.5rem">
+        <div class="stat-card">
+            <div class="stat-icon blue">🚌</div>
+            <div><div class="stat-value">{{ stats.total_buses }}</div><div class="stat-label">Total Buses</div></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon green">✅</div>
+            <div><div class="stat-value">{{ stats.active_buses }}</div><div class="stat-label">Active Buses</div></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon orange">🗺️</div>
+            <div><div class="stat-value">{{ stats.total_routes }}</div><div class="stat-label">Routes</div></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon purple">👥</div>
+            <div><div class="stat-value">{{ stats.total_users }}</div><div class="stat-label">Users</div></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon green">🎫</div>
+            <div><div class="stat-value">{{ stats.active_passes }}</div><div class="stat-label">Active Passes</div></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon orange">📋</div>
+            <div><div class="stat-value">{{ stats.today_attendance }}</div><div class="stat-label">Today's Scans</div></div>
+        </div>
+    </div>
+
+    <!-- ═══════════ TAB BAR ═══════════ -->
+    <div class="admin-tabs" id="admin-tabs">
+        <div class="admin-tab active" data-tab="buses">🚌 Manage Buses</div>
+        <div class="admin-tab" data-tab="users">👥 Manage Users</div>
+        <div class="admin-tab" data-tab="passes">🎫 Manage Passes</div>
+        <div class="admin-tab" data-tab="attendance">📋 Attendance Log</div>
+        <div class="admin-tab" data-tab="gps">📍 GPS Logs</div>
+        <div class="admin-tab" data-tab="driver">🚌 Driver GPS Portal</div>
+    </div>
+
+    <!-- ═══════════ TAB: MANAGE BUSES ═══════════ -->
+    <div class="tab-panel active" id="tab-buses">
+        <button class="add-toggle-btn" onclick="toggleForm('add-bus-form')">➕ Add New Bus</button>
+
+        <div class="toggle-form" id="add-bus-form">
+            <form method="POST" action="{% url 'admin_add_bus' %}">
+                {% csrf_token %}
+                <div class="admin-form-grid">
+                    <div class="admin-form-group">
+                        <label>Bus Number *</label>
+                        <input type="text" name="bus_number" required placeholder="e.g. KL-58-1234" />
+                    </div>
+                    <div class="admin-form-group">
+                        <label>Capacity</label>
+                        <input type="number" name="capacity" value="49" min="1" />
+                    </div>
+                    <div class="admin-form-group">
+                        <label>Bus Type</label>
+                        <select name="bus_type">
+                            <option value="college">College Bus</option>
+                            <option value="tourist">Tourist Bus</option>
+                        </select>
+                    </div>
+                    <div class="admin-form-group">
+                        <label>Route</label>
+                        <input type="text" name="new_route" placeholder="e.g. Kannur – VJEC" />
+                    </div>
+                </div>
+                <div class="admin-check" style="margin:0.75rem 0">
+                    <input type="checkbox" name="is_active" id="new_bus_active" checked />
+                    <label for="new_bus_active">Active</label>
+                </div>
+                <button type="submit" class="admin-submit">➕ Add Bus</button>
+            </form>
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Bus No.</th><th>Route</th><th>Type</th><th>Capacity</th>
+                        <th>Occupied</th><th>Available</th><th>Status</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bus in buses %}
+                    <tr>
+                        <td><strong style="color:var(--accent-light)">{{ bus.bus_number }}</strong></td>
+                        <td>{{ bus.route.name|default:"Not assigned" }}</td>
+                        <td>{{ bus.get_bus_type_display }}</td>
+                        <td>{{ bus.capacity }}</td>
+                        <td>{{ bus.current_occupancy }}</td>
+                        <td style="color:{% if bus.available_seats > 10 %}#16a34a{% elif bus.available_seats > 0 %}#d97706{% else %}#dc2626{% endif %}">
+                            {{ bus.available_seats }}
+                        </td>
+                        <td><span class="badge badge-{% if bus.is_active %}success{% else %}danger{% endif %}">{{ bus.is_active|yesno:"Active,Inactive" }}</span></td>
+                        <td style="display:flex;gap:0.3rem;flex-wrap:wrap">
+                            <a href="{% url 'admin_edit_bus' bus.id %}" class="action-btn action-btn-edit">✏️ Edit</a>
+                            <a href="{% url 'bus_qr' bus.id %}" target="_blank" class="action-btn action-btn-qr">🖨️ QR</a>
+                            <a href="{% url 'reset_occupancy' bus.id %}" class="action-btn action-btn-reset"
+                               onclick="return confirm('Reset occupancy of Bus {{ bus.bus_number }} to 0?')">🔄 Reset</a>
+                            <form method="POST" action="{% url 'admin_delete_bus' bus.id %}" style="display:inline"
+                                  onsubmit="return confirm('Delete Bus {{ bus.bus_number }}? This cannot be undone.')">
+                                {% csrf_token %}
+                                <button type="submit" class="action-btn action-btn-delete">🗑️ Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:2rem">No buses found</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ── Manage Routes (inside Buses tab) ── -->
+        <div style="margin-top:2.5rem;padding-top:2rem;border-top:2px solid #e2e8f0">
+            <h2 style="font-size:1.1rem;font-weight:700;color:#1e3a5f;margin-bottom:1rem">🗺️ Manage Routes</h2>
+            <button class="add-toggle-btn" onclick="toggleForm('add-route-form')">➕ Add New Route</button>
+
+            <div class="toggle-form" id="add-route-form">
+                <form method="POST" action="{% url 'admin_add_route' %}">
+                    {% csrf_token %}
+                    <div class="admin-form-grid">
+                        <div class="admin-form-group">
+                            <label>Route Name *</label>
+                            <input type="text" name="name" required placeholder="e.g. Kannur – VJEC" />
+                        </div>
+                        <div class="admin-form-group">
+                            <label>Description</label>
+                            <input type="text" name="description" placeholder="Optional description" />
+                        </div>
+                        <div class="admin-form-group" style="grid-column:1/-1">
+                            <label>Stops (comma-separated)</label>
+                            <textarea name="stops" placeholder="e.g. KANNUR, THALASSERY, IRITTY, VJEC"></textarea>
+                        </div>
+                    </div>
+                    <div class="admin-check" style="margin:0.75rem 0">
+                        <input type="checkbox" name="is_active" id="new_route_active" checked />
+                        <label for="new_route_active">Active</label>
+                    </div>
+                    <button type="submit" class="admin-submit">➕ Add Route</button>
+                </form>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Route Name</th><th>Description</th><th>Stops</th>
+                            <th>Buses</th><th>Status</th><th>Created</th><th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for route in routes %}
+                        <tr>
+                            <td><strong style="color:var(--accent-light)">{{ route.name }}</strong></td>
+                            <td style="color:#64748b;font-size:0.82rem;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ route.description|default:"—" }}</td>
+                            <td style="font-size:0.8rem;max-width:250px">
+                                {% for s in route.get_stops_list %}
+                                    <span style="background:#eff6ff;color:#1e40af;padding:0.15rem 0.5rem;border-radius:12px;font-size:0.72rem;display:inline-block;margin:1px">{{ s }}</span>
+                                {% empty %}—{% endfor %}
+                            </td>
+                            <td>{{ route.buses.count }}</td>
+                            <td><span class="badge badge-{% if route.is_active %}success{% else %}danger{% endif %}">{{ route.is_active|yesno:"Active,Inactive" }}</span></td>
+                            <td style="color:#94a3b8;font-size:0.82rem">{{ route.created_at|date:"d M Y" }}</td>
+                            <td style="display:flex;gap:0.3rem;flex-wrap:wrap">
+                                <a href="{% url 'admin_edit_route' route.id %}" class="action-btn action-btn-edit">✏️ Edit</a>
+                                <form method="POST" action="{% url 'admin_delete_route' route.id %}" style="display:inline"
+                                      onsubmit="return confirm('Delete route {{ route.name }}? Buses will be unassigned.')">
+                                    {% csrf_token %}
+                                    <button type="submit" class="action-btn action-btn-delete">🗑️ Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:2rem">No routes found</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ TAB: MANAGE USERS ═══════════ -->
+    <div class="tab-panel" id="tab-users">
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th><th>Username</th><th>VML No</th>
+                        <th>Role</th><th>Department</th><th>Phone</th><th>Joined</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td>{{ u.get_full_name|default:u.username }}</td>
+                        <td style="color:#64748b">{{ u.username }}</td>
+                        <td>{{ u.profile.vml_no|default:"—" }}</td>
+                        <td><span class="badge badge-primary">{{ u.profile.role|capfirst }}</span></td>
+                        <td>{{ u.profile.department|default:"—" }}</td>
+                        <td style="color:#64748b;font-size:0.82rem">{{ u.profile.phone|default:"—" }}</td>
+                        <td style="color:#94a3b8;font-size:0.82rem">{{ u.date_joined|date:"d M Y" }}</td>
+                        <td>
+                            {% if u != request.user %}
+                            <form method="POST" action="{% url 'admin_delete_user' u.id %}" style="display:inline"
+                                  onsubmit="return confirm('Remove user {{ u.get_full_name|default:u.username }} ({{ u.username }})?\nThis will permanently delete their account and all associated passes.')">
+                                {% csrf_token %}
+                                <button type="submit" class="action-btn action-btn-delete">🗑️ Remove</button>
+                            </form>
+                            {% else %}
+                            <span style="color:#94a3b8;font-size:0.78rem;font-style:italic">You</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:2rem">No users yet</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+    <!-- ═══════════ TAB: MANAGE PASSES ═══════════ -->
+    <div class="tab-panel" id="tab-passes">
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Pass ID</th><th>Student</th><th>VML</th><th>Bus</th>
+                        <th>Route</th><th>Boarding</th><th>Amount</th><th>Status</th>
+                        <th>Date</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in passes %}
+                    <tr>
+                        <td><a href="{% url 'view_pass' p.pass_id %}" style="color:var(--accent-light)">{{ p.pass_id_short }}</a></td>
+                        <td>{{ p.user.get_full_name|default:p.user.username }}</td>
+                        <td>{{ p.user.profile.vml_no|default:"—" }}</td>
+                        <td>{{ p.bus.bus_number|default:"—" }}</td>
+                        <td>{{ p.route.name|default:"—" }}</td>
+                        <td>{{ p.boarding_point }}</td>
+                        <td>₹{{ p.amount_paid }}</td>
+                        <td>
+                            <form method="POST" action="{% url 'admin_edit_pass' p.pk %}" class="inline-status-form">
+                                {% csrf_token %}
+                                <select name="status">
+                                    <option value="pending" {% if p.status == 'pending' %}selected{% endif %}>Pending</option>
+                                    <option value="active" {% if p.status == 'active' %}selected{% endif %}>Active</option>
+                                    <option value="expired" {% if p.status == 'expired' %}selected{% endif %}>Expired</option>
+                                    <option value="cancelled" {% if p.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                </select>
+                                <button type="submit">💾</button>
+                            </form>
+                        </td>
+                        <td style="color:#94a3b8;font-size:0.82rem">{{ p.created_at|date:"d M Y" }}</td>
+                        <td>
+                            <form method="POST" action="{% url 'admin_delete_pass' p.pk %}" style="display:inline"
+                                  onsubmit="return confirm('Delete pass {{ p.pass_id_short }}?')">
+                                {% csrf_token %}
+                                <button type="submit" class="action-btn action-btn-delete">🗑️</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="10" style="text-align:center;color:#94a3b8;padding:2rem">No passes found</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ═══════════ TAB: ATTENDANCE LOG ═══════════ -->
+    <div class="tab-panel" id="tab-attendance">
+        <div class="filter-bar">
+            <form method="GET" action="{% url 'admin_dashboard' %}" style="display:flex;gap:0.5rem;align-items:center">
+                <input type="date" name="att_date" value="{{ att_filter_date|date:'Y-m-d' }}" />
+                <input type="hidden" name="tab" value="attendance" />
+                <button type="submit">🔍 Filter</button>
+            </form>
+            <span class="badge badge-info" style="padding:0.35rem 0.9rem">
+                {{ attendance_records.count }} scan{{ attendance_records.count|pluralize }} on {{ att_filter_date }}
+            </span>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th><th>Student Name</th><th>VML No</th><th>Bus</th>
+                        <th>Scanned At</th><th>Pass ID</th><th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rec in attendance_records %}
+                    <tr>
+                        <td style="color:#94a3b8;font-size:0.82rem">{{ forloop.counter }}</td>
+                        <td><strong>{{ rec.user.get_full_name|default:rec.user.username }}</strong></td>
+                        <td>{{ rec.user.profile.vml_no|default:"—" }}</td>
+                        <td><strong style="color:#2563eb">Bus {{ rec.bus.bus_number }}</strong></td>
+                        <td style="font-size:0.82rem">{{ rec.scanned_at|date:"d M Y" }}<br>
+                            <span style="color:#94a3b8">{{ rec.scanned_at|time:"h:i A" }}</span></td>
+                        <td>{% if rec.bus_pass %}<code style="font-size:0.78rem;color:#2563eb">{{ rec.bus_pass.pass_id_short }}</code>{% else %}<span style="color:#94a3b8">—</span>{% endif %}</td>
+                        <td><span class="badge badge-success">Present</span></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:2rem">No attendance records for {{ att_filter_date }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ═══════════ TAB: GPS LOGS ═══════════ -->
+    <div class="tab-panel" id="tab-gps">
+        <div class="filter-bar">
+            <form method="GET" action="{% url 'admin_dashboard' %}" style="display:flex;gap:0.5rem;align-items:center">
+                <input type="date" name="gps_date" value="{{ gps_filter_date|date:'Y-m-d' }}" />
+                <select name="gps_bus">
+                    <option value="">All Buses</option>
+                    {% for bus in buses %}
+                    <option value="{{ bus.id }}" {% if gps_bus_id == bus.id|stringformat:"d" %}selected{% endif %}>Bus {{ bus.bus_number }}</option>
+                    {% endfor %}
+                </select>
+                <input type="hidden" name="tab" value="gps" />
+                <button type="submit">🔍 Filter</button>
+            </form>
+            <span class="badge badge-info" style="padding:0.35rem 0.9rem">
+                {{ gps_logs|length }} GPS log{{ gps_logs|length|pluralize }} on {{ gps_filter_date }}
+            </span>
+        </div>
+
+        <!-- ── Leaflet Map ── -->
+        <div style="border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;margin-bottom:1.25rem;position:relative">
+            <div style="background:linear-gradient(135deg,#1e3a5f,#2563eb);padding:0.6rem 1rem;display:flex;align-items:center;justify-content:space-between">
+                <span style="color:#fff;font-weight:700;font-size:0.9rem">🗺️ GPS Locations Map</span>
+                <span id="gps-live-badge" style="background:rgba(22,163,74,0.25);border:1px solid #16a34a;color:#86efac;font-size:0.75rem;font-weight:700;padding:0.2rem 0.7rem;border-radius:99px">● Live updating</span>
+            </div>
+            <div id="admin-gps-map" style="height:420px;width:100%"></div>
+        </div>
+
+        <!-- ── Log Table ── -->
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th><th>Bus</th><th>Latitude</th><th>Longitude</th>
+                        <th>Speed (km/h)</th><th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for gps in gps_logs %}
+                    <tr>
+                        <td style="color:#94a3b8;font-size:0.82rem">{{ forloop.counter }}</td>
+                        <td><strong style="color:#2563eb">Bus {{ gps.bus.bus_number }}</strong></td>
+                        <td style="font-family:monospace;font-size:0.82rem">{{ gps.latitude }}</td>
+                        <td style="font-family:monospace;font-size:0.82rem">{{ gps.longitude }}</td>
+                        <td>{{ gps.speed|floatformat:1 }}</td>
+                        <td style="font-size:0.82rem">{{ gps.timestamp|date:"d M Y" }}<br>
+                            <span style="color:#94a3b8">{{ gps.timestamp|time:"h:i:s A" }}</span></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:2rem">No GPS logs for {{ gps_filter_date }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+    <!-- ═══════════ TAB: DRIVER GPS PORTAL ═══════════ -->
+    <div class="tab-panel" id="tab-driver">
+        <button class="add-toggle-btn" onclick="toggleForm('add-driver-form')">➕ Add New Driver</button>
+
+        <div class="toggle-form" id="add-driver-form">
+            <form method="POST" action="{% url 'admin_add_driver' %}">
+                {% csrf_token %}
+                <div class="admin-form-grid">
+                    <div class="admin-form-group">
+                        <label>Driver Full Name *</label>
+                        <input type="text" name="driver_name" required placeholder="e.g. Rajesh Kumar" />
+                    </div>
+                    <div class="admin-form-group">
+                        <label>Login Username * <small style="color:#94a3b8;font-weight:400">(auto-prefixed with 'd')</small></label>
+                        <input type="text" name="driver_username" required placeholder="e.g. rajesh → drajesh" />
+                    </div>
+                    <div class="admin-form-group">
+                        <label>Password *</label>
+                        <input type="password" name="driver_password" required placeholder="Min 6 characters" />
+                    </div>
+                    <div class="admin-form-group">
+                        <label>Assign to Bus</label>
+                        <select name="driver_bus">
+                            <option value="">— Not Assigned —</option>
+                            {% for b in buses %}
+                            <option value="{{ b.id }}">Bus {{ b.bus_number }}{% if b.route %} ({{ b.route.name }}){% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="admin-submit">➕ Create Driver Account</button>
+            </form>
+        </div>
+
+        <!-- Existing Drivers Table -->
+        <div class="table-wrapper" style="margin-top:1.5rem">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Driver Name</th><th>Username</th>
+                        <th>Assigned Bus</th><th>Route</th><th>Tracking</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in buses %}
+                    {% if b.driver %}
+                    <tr>
+                        <td>{{ b.driver.get_full_name|default:b.driver_name }}</td>
+                        <td style="color:#64748b">{{ b.driver.username }}</td>
+                        <td><strong style="color:#2563eb">Bus {{ b.bus_number }}</strong></td>
+                        <td>{{ b.route.name|default:"—" }}</td>
+                        <td>
+                            {% if b.is_tracking %}
+                            <span class="badge" style="background:#16a34a;color:#fff">● LIVE</span>
+                            {% else %}
+                            <span class="badge" style="background:#64748b;color:#fff">Offline</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div style="text-align:center;margin-top:1.5rem">
+            <a href="{% url 'driver_dashboard' %}" class="admin-submit"
+               style="text-decoration:none;display:inline-block;padding:0.8rem 2rem;font-size:1rem">
+                🚌 Open Driver GPS Portal →
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// ── Tab Switching ──
+(function(){
+    const tabs = document.querySelectorAll('.admin-tab');
+    const panels = document.querySelectorAll('.tab-panel');
+
+    // Check URL param for active tab (after filter form submit)
+    const urlParams = new URLSearchParams(window.location.search);
+    const activeTab = urlParams.get('tab');
+
+    tabs.forEach(tab => {
+        if (activeTab && tab.dataset.tab === activeTab) {
+            tabs.forEach(t => t.classList.remove('active'));
+            panels.forEach(p => p.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById('tab-' + activeTab).classList.add('active');
+        }
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            panels.forEach(p => p.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+        });
+    });
+})();
+
+// ── Toggle Add Forms ──
+function toggleForm(id) {
+    const el = document.getElementById(id);
+    el.classList.toggle('show');
+    if (el.classList.contains('show')) {
+        el.querySelector('input')?.focus();
+    }
+}
+</script>
+
+<!-- Leaflet JS: GPS Map -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function () {
+    // ── Historical GPS log points from Django template ──
+    const gpsLogPoints = [
+        {% for gps in gps_logs %}
+        {
+            lat: {{ gps.latitude }},
+            lng: {{ gps.longitude }},
+            bus: "Bus {{ gps.bus.bus_number }}",
+            speed: "{{ gps.speed|floatformat:1 }} km/h",
+            time: "{{ gps.timestamp|date:'d M Y' }} {{ gps.timestamp|time:'h:i:s A' }}"
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    let adminMap = null;
+    let liveMarkers = {};
+    let mapInitialized = false;
+
+    // Custom icons
+    const busIcon = L.divIcon({
+        html: `<div style="background:linear-gradient(135deg,#f57c00,#ff9800);width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.35)">🚌</div>`,
+        iconSize: [34, 34], iconAnchor: [17, 17], popupAnchor: [0, -20], className: ''
+    });
+
+    function initAdminMap() {
+        if (mapInitialized) { adminMap.invalidateSize(); return; }
+        mapInitialized = true;
+
+        // Default center: Kerala (VJEC area)
+        adminMap = L.map('admin-gps-map').setView([11.75, 75.8], 11);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+            maxZoom: 18
+        }).addTo(adminMap);
+
+        const bounds = [];
+
+        // ── Plot historical log points as numbered circles ──
+        gpsLogPoints.forEach((pt, i) => {
+            const circleMarker = L.circleMarker([pt.lat, pt.lng], {
+                radius: 8,
+                fillColor: '#2563eb',
+                color: '#1e40af',
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.85
+            }).addTo(adminMap)
+              .bindPopup(`
+                <div style="min-width:160px">
+                  <strong style="font-size:0.95rem">${pt.bus}</strong><br/>
+                  <small style="color:#64748b">Speed: ${pt.speed}</small><br/>
+                  <small style="color:#64748b">📍 ${pt.lat.toFixed(6)}, ${pt.lng.toFixed(6)}</small><br/>
+                  <small style="color:#94a3b8">${pt.time}</small>
+                </div>`
+              );
+            // Add index label
+            L.marker([pt.lat, pt.lng], {
+                icon: L.divIcon({
+                    html: `<div style="font-size:0.65rem;font-weight:800;color:#fff;line-height:1">${i+1}</div>`,
+                    iconSize: [16, 16], iconAnchor: [8, 8], className: ''
+                }),
+                interactive: false
+            }).addTo(adminMap);
+            bounds.push([pt.lat, pt.lng]);
+        });
+
+        if (bounds.length > 0) {
+            adminMap.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+        }
+
+        // ── Live bus markers from API ──
+        function fetchLiveBuses() {
+            fetch('/api/bus-locations/')
+                .then(r => r.json())
+                .then(data => {
+                    data.buses.forEach(bus => {
+                        const popup = `
+                          <div style="min-width:160px">
+                            <strong>🚌 Bus ${bus.bus_number}</strong><br/>
+                            <small style="color:#64748b">Route: ${bus.route || '—'}</small><br/>
+                            <small style="color:#64748b">Speed: ${bus.speed} km/h</small><br/>
+                            <small style="color:#94a3b8">Updated: ${bus.updated}</small>
+                          </div>`;
+                        if (liveMarkers[bus.bus_id]) {
+                            liveMarkers[bus.bus_id].setLatLng([bus.lat, bus.lng]).setPopupContent(popup);
+                        } else {
+                            liveMarkers[bus.bus_id] = L.marker([bus.lat, bus.lng], { icon: busIcon })
+                                .addTo(adminMap).bindPopup(popup);
+                        }
+                    });
+                }).catch(() => {});
+        }
+        fetchLiveBuses();
+        setInterval(fetchLiveBuses, 15000);
+    }
+
+    // Initialize map when GPS tab is clicked (avoids Leaflet size=0 bug)
+    document.querySelectorAll('.admin-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            if (tab.dataset.tab === 'gps') {
+                setTimeout(initAdminMap, 50);
+            }
+        });
+    });
+
+    // If GPS tab is already active on load (via ?tab=gps), init immediately
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('tab') === 'gps') {
+        setTimeout(initAdminMap, 100);
+    }
+})();
+</script>
+{% endblock %}

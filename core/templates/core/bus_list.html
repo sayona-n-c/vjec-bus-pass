@@ -1,0 +1,73 @@
+{% extends 'core/base.html' %}
+{% block title %}Buses – {{ route.name }}{% endblock %}
+
+{% block content %}
+<div class="main-content fade-up">
+    <div class="page-header">
+        <h1>🚌 Buses on {{ route.name }}</h1>
+        <p>
+            <a href="{% url 'routes' %}" style="color:var(--accent-light);text-decoration:none">← Back to Routes</a>
+            &nbsp;|&nbsp; {{ buses|length }} bus{{ buses|length|pluralize:"es" }} found
+        </p>
+    </div>
+
+    <!-- Route Stops -->
+    {% if route.get_stops_list %}
+    <div class="card" style="margin-bottom:1.5rem;padding:1.25rem 1.5rem">
+        <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
+            <span style="color:var(--text-muted);font-size:0.85rem;font-weight:600">STOPS:</span>
+            {% for stop in route.get_stops_list %}
+            <span class="badge badge-primary">{{ stop }}</span>
+            {% if not forloop.last %}→{% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if buses %}
+    <div class="grid-2">
+        {% for bus in buses %}
+        <div class="bus-card">
+            <div class="bus-card-header">
+                <div>
+                    <span class="bus-number-badge">{{ bus.bus_number }}</span>
+                    {% if bus.bus_type == 'tourist' %}
+                    <span class="badge" style="background:#d97706;color:#fff;margin-left:0.5rem">T – Tourist Bus</span>
+                    {% else %}
+                    <span class="badge" style="background:#1e3a8a;color:#fff;margin-left:0.5rem">C – College Bus</span>
+                    {% endif %}
+                </div>
+                {% if bus.is_available %}
+                <span class="badge" style="background:#16a34a;color:#fff">Available</span>
+                {% else %}
+                <span class="badge" style="background:#dc2626;color:#fff">Full</span>
+                {% endif %}
+            </div>
+            <div style="padding:1.25rem 1.5rem">
+                <!-- Seat Bar -->
+                <div class="seat-bar">
+                    <div class="seat-bar-track">
+                        <div class="seat-bar-fill {% if bus.occupancy_percentage < 50 %}low{% elif bus.occupancy_percentage < 80 %}medium{% else %}high{% endif %}"
+                            style="width:{{ bus.occupancy_percentage }}%"></div>
+                    </div>
+                    <div class="seat-info">
+                        <span>{{ bus.available_seats }} seats available</span>
+                        <span>{{ bus.current_occupancy }}/{{ bus.capacity }} occupied</span>
+                    </div>
+                </div>
+                <a href="{% url 'bus_detail' bus.id %}" class="btn btn-primary btn-block" style="margin-top:0.75rem">
+                    View Details & Book →
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">🚌</div>
+        <h3 style="color:var(--white)">No Buses Available</h3>
+        <p>No active buses found for this route.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

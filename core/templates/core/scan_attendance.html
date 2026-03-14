@@ -1,0 +1,220 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Scan Bus QR – Mark Attendance{% endblock %}
+
+{% block extra_head %}
+<style>
+    .scanner-wrapper {
+        max-width: 480px;
+        margin: 2rem auto;
+    }
+
+    #video-container {
+        position: relative;
+        border-radius: 16px;
+        overflow: hidden;
+        background: #000;
+    }
+
+    #qr-video {
+        width: 100%;
+        display: block;
+        border-radius: 16px;
+    }
+
+    #scan-overlay {
+        position: absolute;
+        inset: 0;
+        border: 3px dashed rgba(99, 255, 130, 0.7);
+        border-radius: 16px;
+        pointer-events: none;
+        animation: pulse-border 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-border {
+
+        0%,
+        100% {
+            border-color: rgba(99, 255, 130, 0.7);
+            box-shadow: 0 0 0 0 rgba(99, 255, 130, 0.3);
+        }
+
+        50% {
+            border-color: rgba(99, 255, 130, 1);
+            box-shadow: 0 0 0 8px rgba(99, 255, 130, 0.0);
+        }
+    }
+
+    #scan-status {
+        text-align: center;
+        padding: 1rem;
+        font-size: 0.95rem;
+        border-radius: 10px;
+        margin-top: 1rem;
+        background: rgba(26, 35, 126, 0.2);
+        border: 1px solid rgba(26, 35, 126, 0.4);
+    }
+
+    .corner-box {
+        position: absolute;
+        width: 60px;
+        height: 60px;
+        border-color: #63ff82;
+        border-style: solid;
+        border-width: 0;
+        pointer-events: none;
+    }
+
+    .corner-box.tl {
+        top: 12px;
+        left: 12px;
+        border-top-width: 4px;
+        border-left-width: 4px;
+        border-radius: 6px 0 0 0;
+    }
+
+    .corner-box.tr {
+        top: 12px;
+        right: 12px;
+        border-top-width: 4px;
+        border-right-width: 4px;
+        border-radius: 0 6px 0 0;
+    }
+
+    .corner-box.bl {
+        bottom: 12px;
+        left: 12px;
+        border-bottom-width: 4px;
+        border-left-width: 4px;
+        border-radius: 0 0 0 6px;
+    }
+
+    .corner-box.br {
+        bottom: 12px;
+        right: 12px;
+        border-bottom-width: 4px;
+        border-right-width: 4px;
+        border-radius: 0 0 6px 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-content fade-up">
+    <div class="page-header">
+        <h1>📲 Scan Bus QR for Attendance</h1>
+        <p>Point your camera at the QR code sticker inside the bus to mark your attendance</p>
+    </div>
+
+    <div class="scanner-wrapper">
+        <div id="video-container">
+            <video id="qr-video" autoplay playsinline muted></video>
+            <div id="scan-overlay"></div>
+            <div class="corner-box tl"></div>
+            <div class="corner-box tr"></div>
+            <div class="corner-box bl"></div>
+            <div class="corner-box br"></div>
+        </div>
+
+        <div id="scan-status">
+            <span id="status-icon">📷</span>
+            <span id="status-text"> Starting camera…</span>
+        </div>
+
+        <div style="text-align:center;margin-top:1.25rem;display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+            <button class="btn btn-primary" id="toggle-camera-btn">⏸ Pause Camera</button>
+            <a href="{% url 'dashboard' %}" class="btn btn-outline">← Back</a>
+        </div>
+
+        <div class="card" style="margin-top:1.5rem;padding:1.1rem">
+            <div class="card-title" style="font-size:0.95rem;margin-bottom:0.5rem">ℹ️ How it works</div>
+            <ul style="font-size:0.85rem;line-height:1.9;padding-left:1.2rem;margin:0">
+                <li>Open this page on your phone while on the bus</li>
+                <li>Point the camera at the QR code sticker inside the bus</li>
+                <li>Attendance is automatically marked — no button needed</li>
+                <li>Seat count updates in real time</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script>
+    let videoStream = null;
+    let scanning = true;
+    let lastScanned = null;
+
+    const video = document.getElementById('qr-video');
+    const statusIcon = document.getElementById('status-icon');
+    const statusText = document.getElementById('status-text');
+
+    function setStatus(icon, text, color = '') {
+        statusIcon.textContent = icon;
+        statusText.textContent = ' ' + text;
+        document.getElementById('scan-status').style.borderColor = color || '';
+    }
+
+    async function startCamera() {
+        try {
+            videoStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+            });
+            video.srcObject = videoStream;
+            video.addEventListener('loadedmetadata', () => {
+                video.play();
+                setStatus('🟢', 'Camera ready — searching for QR code…');
+                requestAnimationFrame(scanFrame);
+            });
+        } catch (e) {
+            setStatus('❌', 'Camera access denied. Please allow camera permission.', 'rgba(220,38,38,0.6)');
+        }
+    }
+
+    function scanFrame() {
+        if (!scanning) return;
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'dontInvert' });
+
+            if (code && code.data && code.data !== lastScanned) {
+                lastScanned = code.data;
+                setStatus('✅', 'QR detected! Redirecting…', 'rgba(22,163,74,0.6)');
+                // Extract mark-attendance URL from QR data
+                const qrData = code.data;
+                if (qrData.includes('/mark-attendance/')) {
+                    setTimeout(() => { window.location.href = qrData; }, 800);
+                } else {
+                    setStatus('⚠️', 'This is not a valid bus attendance QR code.', 'rgba(245,158,11,0.6)');
+                    setTimeout(() => { lastScanned = null; setStatus('📷', 'Scanning…'); }, 3000);
+                }
+                return;
+            }
+        }
+        requestAnimationFrame(scanFrame);
+    }
+
+    function toggleCamera() {
+        const btn = document.getElementById('toggle-camera-btn');
+        if (scanning) {
+            scanning = false;
+            btn.textContent = '▶ Resume Camera';
+            setStatus('⏸', 'Camera paused');
+        } else {
+            scanning = true;
+            btn.textContent = '⏸ Pause Camera';
+            setStatus('📷', 'Scanning…');
+            requestAnimationFrame(scanFrame);
+        }
+    }
+
+    startCamera();
+    document.getElementById('toggle-camera-btn').addEventListener('click', toggleCamera);
+</script>
+{% endblock %}

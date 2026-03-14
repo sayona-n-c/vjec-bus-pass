@@ -1,0 +1,98 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register | VML College Bus Pass</title>
+    <link rel="stylesheet" href="{% static 'core/css/style.css' %}" />
+</head>
+
+<body>
+    <div class="auth-page" style="padding: 1.5rem 1rem;">
+        <div class="auth-box fade-up" style="max-width:560px">
+
+            <!-- Registration Form -->
+            <div class="auth-logo">
+                <div class="logo-ring">📝</div>
+                <h2>Create Account</h2>
+                <p>Register for VML College Bus Pass</p>
+            </div>
+
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }}" style="margin-bottom:1rem">{{ message }}</div>
+            {% endfor %}
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">First Name *</label>
+                        <input type="text" name="first_name" class="form-control" placeholder="First name" required
+                            value="{{ form.first_name.value|default:'' }}" />
+                        {% for e in form.first_name.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Last Name *</label>
+                        <input type="text" name="last_name" class="form-control" placeholder="Last name" required
+                            value="{{ form.last_name.value|default:'' }}" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">USERNAME *</label>
+                    <input type="text" name="vml_no" class="form-control" placeholder="e.g. VML23CS200" maxlength="20"
+                        required value="{{ form.vml_no.value|default:'' }}" style="text-transform:uppercase" />
+                    <div class="form-help">Format: VML + 2-digit year + 2-letter dept + 3-digit roll (e.g. VML23CS200)
+                    </div>
+                    {% for e in form.vml_no.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Department *</label>
+                        <input type="text" name="department" class="form-control" placeholder="e.g. CSE" required
+                            value="{{ form.department.value|default:'' }}" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" name="phone" class="form-control" placeholder="10-digit number"
+                            value="{{ form.phone.value|default:'' }}" />
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Password *</label>
+                        <input type="password" name="password1" class="form-control" placeholder="Min 8 characters"
+                            required />
+                        {% for e in form.password1.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Confirm Password *</label>
+                        <input type="password" name="password2" class="form-control" placeholder="Repeat password"
+                            required />
+                        {% for e in form.password2.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-accent btn-lg btn-block" style="margin-top:0.5rem">
+                    ✅ Create Account
+                </button>
+            </form>
+
+            <div class="auth-divider">Already registered?</div>
+            <div style="text-align:center">
+                <a href="{% url 'login' %}" class="btn btn-outline">← Back to Login</a>
+            </div>
+
+        </div>
+    </div>
+    <script src="{% static 'core/js/main.js' %}"></script>
+</body>
+
+</html>

@@ -1,0 +1,375 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login | Vimal Jyothi Engineering College Bus Pass</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@700;800&family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ── Full-screen building background ── */
+        .bg-image {
+            position: fixed;
+            inset: 0;
+            background: url("{% static 'core/images/college_building.png' %}") center center / cover no-repeat;
+            z-index: 0;
+        }
+
+        .bg-overlay {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg,
+                    rgba(0, 0, 50, 0.55) 0%,
+                    rgba(0, 10, 80, 0.35) 50%,
+                    rgba(0, 0, 30, 0.55) 100%);
+            backdrop-filter: blur(1.5px);
+            z-index: 1;
+        }
+
+        /* ── Top bar ── */
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 32px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            z-index: 10;
+        }
+
+        .top-bar img.logo {
+            height: 54px;
+            width: 54px;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+        }
+
+        .top-bar .college-name {
+            color: #fff;
+        }
+
+        .top-bar .college-name h1 {
+            font-family: 'EB Garamond', Georgia, serif;
+            font-size: 1.55rem;
+            font-weight: 800;
+            font-variant: small-caps;
+            letter-spacing: 1.5px;
+            line-height: 1.15;
+            color: #ffffff;
+        }
+
+        .top-bar .college-name p {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 700;
+            opacity: 0.85;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            margin-top: 1px;
+        }
+
+        /* ── Center login card ── */
+        .page {
+            position: relative;
+            z-index: 5;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-top: 80px;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            box-shadow:
+                0 24px 60px rgba(0, 0, 60, 0.35),
+                0 0 0 1px rgba(255, 255, 255, 0.4);
+            width: 100%;
+            max-width: 420px;
+            padding: 40px 36px 36px;
+            animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(28px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* logo inside card */
+        .card-logo {
+            text-align: center;
+            margin-bottom: 22px;
+        }
+
+        .card-logo img {
+            height: 68px;
+            width: 68px;
+            object-fit: contain;
+        }
+
+        .card-logo h2 {
+            font-family: 'Poppins', sans-serif;
+            color: #1a237e;
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-top: 8px;
+        }
+
+        .card-logo p {
+            font-size: 0.8rem;
+            color: #546e7a;
+            margin-top: 2px;
+            letter-spacing: 0.3px;
+        }
+
+        /* alert */
+        .alert {
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            margin-bottom: 16px;
+        }
+
+        .alert-error {
+            background: #fdecea;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+        }
+
+        .alert-success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #a5d6a7;
+        }
+
+        .alert-warning {
+            background: #fff8e1;
+            color: #e65100;
+            border: 1px solid #ffcc80;
+        }
+
+        .alert-info {
+            background: #e3f2fd;
+            color: #0d47a1;
+            border: 1px solid #90caf9;
+        }
+
+        /* form */
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #37474f;
+            margin-bottom: 6px;
+            letter-spacing: 0.3px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1.5px solid #cfd8dc;
+            border-radius: 9px;
+            font-size: 0.95rem;
+            color: #263238;
+            background: #f9fafb;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+
+        .form-control:focus {
+            border-color: #1976d2;
+            box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.15);
+            background: #fff;
+        }
+
+        /* login btn */
+        .btn-login {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, #1565c0, #1976d2);
+            color: #fff;
+            border: none;
+            border-radius: 9px;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.2s;
+            margin-top: 6px;
+            box-shadow: 0 4px 14px rgba(21, 101, 192, 0.4);
+        }
+
+        .btn-login:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(21, 101, 192, 0.5);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        /* footer note */
+        .card-footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 0.83rem;
+            color: #78909c;
+        }
+
+        .card-footer a {
+            color: #1565c0;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .card-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .timing-note {
+            margin-top: 16px;
+            text-align: center;
+            font-size: 0.78rem;
+            color: #78909c;
+            background: #eceff1;
+            border-radius: 8px;
+            padding: 8px 12px;
+        }
+
+        .timing-note strong {
+            color: #1565c0;
+        }
+
+        /* divider */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 18px 0 14px;
+            color: #b0bec5;
+            font-size: 0.8rem;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #cfd8dc;
+        }
+
+        /* bottom copyright */
+        .copyright {
+            position: fixed;
+            bottom: 14px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.55);
+            font-size: 0.78rem;
+            z-index: 5;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Background -->
+    <div class="bg-image"></div>
+    <div class="bg-overlay"></div>
+
+    <!-- Top bar: Logo + College name -->
+    <div class="top-bar">
+        <img src="{% static 'core/images/vjec_logo.png' %}" alt="VJ Logo" class="logo" />
+        <div class="college-name">
+            <h1>VIMAL JYOTHI</h1>
+            <p>Engineering College, Chemperi</p>
+        </div>
+    </div>
+
+    <!-- Login card -->
+    <div class="page">
+        <div class="login-card">
+            <div class="card-logo">
+                <img src="{% static 'core/images/vjec_logo.png' %}" alt="VJEC Logo" />
+                <h2>User Login</h2>
+                <p>Online Bus Pass Management System</p>
+            </div>
+
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+            {% endfor %}
+            {% endif %}
+
+            <form method="post" action="{% url 'login' %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label" for="id_username">USERNAME</label>
+                    <input type="text" id="id_username" name="username" class="form-control"
+                        placeholder="Enter your USERNAME (e.g. VML23CS200)" required autofocus style="text-transform:uppercase" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="id_password">Password</label>
+                    <input type="password" id="id_password" name="password" class="form-control"
+                        placeholder="Enter your password" required />
+                </div>
+                <button type="submit" class="btn-login">Login</button>
+            </form>
+
+            <div class="divider">or</div>
+
+            <div class="card-footer">
+                Don't have an account?
+                <a href="{% url 'register' %}">Register Here</a>
+            </div>
+
+            <div class="timing-note">
+                Booking window: <strong>9:00 AM – 3:10 PM</strong> &nbsp;|&nbsp; Mon – Sat &nbsp;|&nbsp; Sundays closed
+            </div>
+        </div>
+    </div>
+
+    <div class="copyright">
+        &copy; 2025-26 Vimal Jyothi Engineering College &mdash; Online Bus Pass System
+    </div>
+</body>
+
+</html>

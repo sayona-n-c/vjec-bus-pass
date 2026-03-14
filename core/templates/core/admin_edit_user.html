@@ -1,0 +1,114 @@
+{% extends 'core/base.html' %}
+{% block title %}Edit User – {{ target_user.get_full_name|default:target_user.username }}{% endblock %}
+
+{% block content %}
+<div class="main-content fade-up">
+    <div class="page-header" style="margin-bottom:1.5rem">
+        <h1 style="color:#0d2137">👤 Edit User: {{ target_user.get_full_name|default:target_user.username }}</h1>
+        <p style="color:#4a5568;font-size:0.9rem">Update user profile details. Changes save immediately.</p>
+    </div>
+
+    <form method="POST" style="max-width:700px">
+        {% csrf_token %}
+
+        <!-- User Info -->
+        <div style="margin-bottom:2rem;background:#fff;border-radius:14px;border:1px solid #c7d7f7;
+                    box-shadow:0 2px 16px rgba(30,58,95,0.08);overflow:hidden">
+            <div style="background:linear-gradient(135deg,#1e3a5f,#2563eb);padding:0.85rem 1.25rem;
+                        display:flex;align-items:center;gap:0.6rem">
+                <span style="font-size:1.2rem">👤</span>
+                <span style="color:#fff !important;font-weight:700;font-size:0.95rem">User Account</span>
+            </div>
+            <div style="padding:1.25rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                <div>
+                    <label style="display:block;font-size:0.82rem;font-weight:600;color:#4a5568;margin-bottom:0.3rem">
+                        First Name</label>
+                    <input type="text" name="first_name" value="{{ target_user.first_name }}"
+                           style="width:100%;padding:0.6rem 0.8rem;border:1px solid #cbd5e0;border-radius:8px;
+                                  font-size:0.9rem;color:#1a1a1a;background:#f8fafc" />
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.82rem;font-weight:600;color:#4a5568;margin-bottom:0.3rem">
+                        Last Name</label>
+                    <input type="text" name="last_name" value="{{ target_user.last_name }}"
+                           style="width:100%;padding:0.6rem 0.8rem;border:1px solid #cbd5e0;border-radius:8px;
+                                  font-size:0.9rem;color:#1a1a1a;background:#f8fafc" />
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.82rem;font-weight:600;color:#4a5568;margin-bottom:0.3rem">
+                        Email</label>
+                    <input type="email" name="email" value="{{ target_user.email }}"
+                           style="width:100%;padding:0.6rem 0.8rem;border:1px solid #cbd5e0;border-radius:8px;
+                                  font-size:0.9rem;color:#1a1a1a;background:#f8fafc" />
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.82rem;font-weight:600;color:#94a3b8;margin-bottom:0.3rem">
+                        Username (read-only)</label>
+                    <input type="text" value="{{ target_user.username }}" disabled
+                           style="width:100%;padding:0.6rem 0.8rem;border:1px solid #e2e8f0;border-radius:8px;
+                                  font-size:0.9rem;color:#94a3b8;background:#f1f5f9" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Info -->
+        <div style="margin-bottom:2rem;background:#fff;border-radius:14px;border:1px solid #a7f3d0;
+                    box-shadow:0 2px 16px rgba(5,150,105,0.09);overflow:hidden">
+            <div style="background:linear-gradient(135deg,#065f46,#059669);padding:0.85rem 1.25rem;
+                        display:flex;align-items:center;gap:0.6rem">
+                <span style="font-size:1.2rem">📋</span>
+                <span style="color:#fff !important;font-weight:700;font-size:0.95rem">Profile Details</span>
+            </div>
+            <div style="padding:1.25rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                <div>
+                    <label style="display:block;font-size:0.82rem;font-weight:600;color:#4a5568;margin-bottom:0.3rem">
+                        Role</label>
+                    <select name="role"
+                            style="width:100%;padding:0.6rem 0.8rem;border:1px solid #cbd5e0;border-radius:8px;
+                                   font-size:0.9rem;color:#1a1a1a;background:#f8fafc">
+                        <option value="student" {% if profile.role == 'student' %}selected{% endif %}>Student</option>
+                        <option value="faculty" {% if profile.role == 'faculty' %}selected{% endif %}>Faculty</option>
+                        <option value="admin" {% if profile.role == 'admin' %}selected{% endif %}>Admin</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.82rem;font-weight:600;color:#4a5568;margin-bottom:0.3rem">
+                        VML No</label>
+                    <input type="text" name="vml_no" value="{{ profile.vml_no|default:'' }}"
+                           style="width:100%;padding:0.6rem 0.8rem;border:1px solid #cbd5e0;border-radius:8px;
+                                  font-size:0.9rem;color:#1a1a1a;background:#f8fafc" />
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.82rem;font-weight:600;color:#4a5568;margin-bottom:0.3rem">
+                        Department</label>
+                    <input type="text" name="department" value="{{ profile.department|default:'' }}"
+                           style="width:100%;padding:0.6rem 0.8rem;border:1px solid #cbd5e0;border-radius:8px;
+                                  font-size:0.9rem;color:#1a1a1a;background:#f8fafc" />
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.82rem;font-weight:600;color:#4a5568;margin-bottom:0.3rem">
+                        Phone</label>
+                    <input type="text" name="phone" value="{{ profile.phone|default:'' }}"
+                           style="width:100%;padding:0.6rem 0.8rem;border:1px solid #cbd5e0;border-radius:8px;
+                                  font-size:0.9rem;color:#1a1a1a;background:#f8fafc" />
+                </div>
+            </div>
+        </div>
+
+        <div style="display:flex;gap:1rem;align-items:center">
+            <button type="submit"
+                    style="padding:0.8rem 2rem;background:linear-gradient(135deg,#1e3a5f,#2563eb);
+                           color:#fff;border:none;border-radius:10px;font-size:0.95rem;font-weight:700;
+                           cursor:pointer;box-shadow:0 4px 14px rgba(37,99,235,0.3);
+                           transition:transform 0.15s">
+                💾 Save Changes
+            </button>
+            <a href="{% url 'admin_dashboard' %}"
+               style="padding:0.8rem 1.5rem;color:#4a5568;text-decoration:none;font-size:0.9rem;
+                      border:1px solid #cbd5e0;border-radius:10px">
+                ← Back to Dashboard
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
