@@ -8,12 +8,13 @@ import re
 class StudentRegistrationForm(UserCreationForm):
     first_name  = forms.CharField(max_length=50, required=True,  label='First Name')
     last_name   = forms.CharField(max_length=50, required=True,  label='Last Name')
-    vml_no      = forms.CharField(max_length=20, required=True, label='USERNAME',
-                                  help_text='Format: VML23CS200')
+    vml_no      = forms.CharField(max_length=20, required=True, label='College ID',
+                                  help_text='Student: VML23CS200  |  Faculty/Staff: SC1234 or FC1234')
     phone       = forms.CharField(max_length=15, required=False, label='Phone Number')
-    department  = forms.CharField(max_length=100, required=True, label='Department *')
-    role        = forms.ChoiceField(choices=[('student', 'Student'), ('faculty', 'Faculty')],
-                                    label='Role', initial='student')
+    department  = forms.CharField(max_length=100, required=True, label='Department')
+    role        = forms.ChoiceField(
+                      choices=[('student', 'Student'), ('faculty', 'Faculty / Staff')],
+                      label='Role', initial='student')
 
     class Meta:
         model  = User
@@ -28,20 +29,22 @@ class StudentRegistrationForm(UserCreationForm):
     def clean_vml_no(self):
         vml_no = self.cleaned_data.get('vml_no', '').strip()
         if not vml_no:
-            raise forms.ValidationError('USERNAME is required.')
-        if not re.match(r'^VML\d{2}[A-Z]{2}\d{3}$', vml_no, re.IGNORECASE):
-            raise forms.ValidationError(
-                'USERNAME must be in format VML23CS200 (VML + 2 digits + 2 letters + 3 digits)'
-            )
+            raise forms.ValidationError('College ID is required.')
         vml_upper = vml_no.upper()
-        # Check if already registered as a username
+        # Student format: VML23CS200 (VML + 2 digits + 2 letters + 3 digits)
+        student_ok = re.match(r'^VML\d{2}[A-Z]{2}\d{3}$', vml_upper)
+        # Faculty/Staff format: SC1234 or FC1234 (2 letters + 4 digits)
+        faculty_ok = re.match(r'^[A-Z]{2}\d{4}$', vml_upper)
+        if not (student_ok or faculty_ok):
+            raise forms.ValidationError(
+                'Invalid ID. Student: VML23CS200  |  Faculty/Staff: SC1234 or FC1234'
+            )
+        # Check uniqueness
         if User.objects.filter(username=vml_upper).exists():
-            raise forms.ValidationError('This USERNAME is already registered.')
+            raise forms.ValidationError('This ID is already registered.')
         if UserProfile.objects.filter(vml_no__iexact=vml_upper).exists():
-            raise forms.ValidationError('This USERNAME is already registered.')
+            raise forms.ValidationError('This ID is already registered.')
         return vml_upper
-
-
 
 
 class BusPassBookingForm(forms.Form):
@@ -60,11 +63,9 @@ class BusPassBookingForm(forms.Form):
         super().__init__(*args, **kwargs)
         if bus and bus.route:
             stops = [s.strip().upper() for s in bus.route.get_stops_list()]
-            # Case-insensitive match: fetch all BoardingPoints whose name (uppercased) is in stops
             qs = BoardingPoint.objects.filter(
                 name__in=stops
             ).order_by('fare', 'name')
-            # Fall back to all points if none matched (route stops not in fare table yet)
             if not qs.exists():
                 qs = BoardingPoint.objects.all()
             self.fields['boarding_point'].queryset = qs
@@ -77,4 +78,3 @@ class BusPassBookingForm(forms.Form):
         if bp:
             return BoardingPoint.round_to_nearest_10(bp.fare)
         return 0
-
