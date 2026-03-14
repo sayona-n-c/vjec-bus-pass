@@ -13,6 +13,12 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*', cast=Csv())
 
+CSRF_TRUSTED_ORIGINS = config(
+    'CSRF_TRUSTED_ORIGINS',
+    default='https://web-production-52466.up.railway.app',
+    cast=Csv()
+)
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
