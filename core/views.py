@@ -48,23 +48,8 @@ def auth_required(view_func):
     return wrapper
 
 def is_within_registration_window():
-    """Returns True if current IST time is Mon-Sat between 9:00 AM and 3:10 PM.
-    Sundays are holidays – booking is not available.
-    If REGISTRATION_BYPASS_DATE matches today, restrictions are skipped.
-    """
-    now = timezone.localtime(timezone.now())
-    # Check bypass date (e.g. for testing or special events)
-    bypass_date = getattr(settings, 'REGISTRATION_BYPASS_DATE', None)
-    if bypass_date and str(now.date()) == bypass_date:
-        return True
-    # Sunday = weekday 6 → college holiday, no booking
-    if now.weekday() == 6:
-        return False
-    start = now.replace(hour=settings.REGISTRATION_START_HOUR,
-                        minute=settings.REGISTRATION_START_MINUTE, second=0)
-    end = now.replace(hour=settings.REGISTRATION_END_HOUR,
-                      minute=settings.REGISTRATION_END_MINUTE, second=0)
-    return start <= now <= end
+    """Time-based window removed. Booking is available 24/7."""
+    return True
 
 
 def generate_qr_image_base64(data: str) -> str:
@@ -119,6 +104,9 @@ def register_view(request):
             profile.role = form.cleaned_data.get('role', 'student')
             profile.phone = form.cleaned_data.get('phone', '')
             profile.department = form.cleaned_data.get('department', '')
+            # Only set student_type for students; faculty don't commute daily
+            if profile.role == 'student':
+                profile.student_type = form.cleaned_data.get('student_type', 'hosteler')
             profile.save()
 
             login(request, user)
@@ -138,18 +126,33 @@ def login_view(request):
         return redirect('dashboard')
 
     if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        user = authenticate(request, username=username, password=password)
-        if user:
-            login(request, user)
-            messages.success(request, f'Welcome back, {user.first_name or user.username}!')
-            # Redirect drivers to driver dashboard
-            if hasattr(user, 'profile') and user.profile.role == 'driver':
-                return redirect('driver_dashboard')
-            return redirect(request.GET.get('next', 'dashboard'))
+        # Normalize: strip whitespace and uppercase so 'vml23cs100' == 'VML23CS100'
+        raw_username = request.POST.get('username', '').strip().upper()
+        password = request.POST.get('password', '')
+
+        user = authenticate(request, username=raw_username, password=password)
+
+        # Case-insensitive fallback: try matching against stored usernames
+        if user is None and raw_username:
+            from django.contrib.auth.models import User as AuthUser
+            try:
+                matched = AuthUser.objects.get(username__iexact=raw_username)
+                user = authenticate(request, username=matched.username, password=password)
+            except AuthUser.DoesNotExist:
+                user = None
+
+        if user is not None:
+            if not user.is_active:
+                messages.error(request, '⛔ Your account is inactive. Please contact the administrator.')
+            else:
+                login(request, user)
+                messages.success(request, f'Welcome back, {user.first_name or user.username}!')
+                # Redirect drivers to driver dashboard
+                if hasattr(user, 'profile') and user.profile.role == 'driver':
+                    return redirect('driver_dashboard')
+                return redirect(request.GET.get('next', 'dashboard'))
         else:
-            messages.error(request, 'Invalid username or password.')
+            messages.error(request, '❌ Invalid VML Number or Password. Please try again.')
 
     return render(request, 'core/login.html')
 
@@ -207,7 +210,6 @@ def dashboard_view(request):
         'recent_passes': recent_passes,
         'active_buses': active_buses,
         'active_routes': active_routes,
-        'is_within_window': is_within_registration_window(),
     }
     return render(request, 'core/dashboard.html', context)
 
@@ -238,7 +240,6 @@ def bus_detail_view(request, bus_id):
         'bus': bus,
         'gps': gps,
         'coordinator': coordinator,
-        'is_within_window': is_within_registration_window(),
     })
 
 
@@ -253,20 +254,13 @@ def booking_view(request, bus_id):
         messages.error(request, 'Admins cannot book bus passes.')
         return redirect('admin_dashboard')
 
-    bus = get_object_or_404(Bus, pk=bus_id, is_active=True)
+    # ── RBAC: Day Scholars do not need a bus pass ──
+    profile = getattr(request.user, 'profile', None)
+    if profile and profile.student_type == 'day_scholar':
+        messages.info(request, '🏠 Day Scholars do not require a bus pass. Use the QR attendance system to mark your daily boarding.')
+        return redirect('dashboard')
 
-    # ── Time window + Sunday check ──
-    if not is_within_registration_window():
-        now = timezone.localtime(timezone.now())
-        if now.weekday() == 6:
-            messages.warning(request, 'Booking is not available on Sundays. College is closed.')
-        else:
-            messages.warning(
-                request,
-                f'Booking is only available Mon–Sat between 9:00 AM and 3:10 PM. '
-                f'Current time: {now.strftime("%I:%M %p")}.'
-            )
-        return redirect('bus_detail', bus_id=bus_id)
+    bus = get_object_or_404(Bus, pk=bus_id, is_active=True)
 
     # ── Seat availability ──
     if not bus.is_available:
@@ -305,35 +299,54 @@ def booking_view(request, bus_id):
 
 @auth_required
 def payment_view(request, pass_id):
-    # ── RBAC: Admins cannot access payment ──
+    """Payment page: student scans UPI QR then uploads screenshot as proof.
+    The pass stays 'pending' until an admin confirms it."""
+    # ── RBAC: Admins cannot access student payment ──
     if is_admin(request.user):
         messages.error(request, 'Admins do not have access to the payment page.')
         return redirect('admin_dashboard')
+
     bus_pass = get_object_or_404(BusPass, pass_id=pass_id, user=request.user, status='pending')
     payment_link = settings.PAYMENT_LINK + f'?ref={bus_pass.pass_id_short}&amt={bus_pass.amount_paid}'
+
+    uploaded = False
+    if request.method == 'POST':
+        screenshot = request.FILES.get('payment_screenshot')
+        txn_notes = request.POST.get('payment_notes', '').strip()
+        if screenshot:
+            bus_pass.payment_screenshot = screenshot
+            if txn_notes:
+                bus_pass.payment_notes = txn_notes
+            bus_pass.save(update_fields=['payment_screenshot', 'payment_notes'])
+            uploaded = True
+            messages.success(request, '✅ Payment screenshot uploaded! An admin will verify and activate your pass shortly.')
+        else:
+            messages.error(request, 'Please select a screenshot file to upload.')
+
     return render(request, 'core/payment.html', {
         'bus_pass': bus_pass,
         'payment_link': payment_link,
+        'uploaded': uploaded,
+        'already_uploaded': bool(bus_pass.payment_screenshot),
     })
 
 
 @auth_required
+@user_passes_test(is_admin, login_url='dashboard')
 def payment_confirm_view(request, pass_id):
-    """Called after user returns from external payment gateway."""
-    # ── RBAC: Admins cannot confirm payment ──
-    if is_admin(request.user):
-        messages.error(request, 'Admins do not have access to payment confirmation.')
-        return redirect('admin_dashboard')
-    bus_pass = get_object_or_404(BusPass, pass_id=pass_id, user=request.user)
+    """Admin-only: confirm a student's payment and activate their bus pass."""
+    bus_pass = get_object_or_404(BusPass, pass_id=pass_id)
     if bus_pass.status == 'pending':
         bus_pass.status = 'active'
-        bus_pass.save()
-        # Decrement available seats on the bus (reserve the seat)
+        bus_pass.save(update_fields=['status'])
+        # Increment occupancy on the bus
         if bus_pass.bus and bus_pass.bus.current_occupancy < bus_pass.bus.capacity:
             bus_pass.bus.current_occupancy += 1
             bus_pass.bus.save(update_fields=['current_occupancy'])
-        messages.success(request, 'Payment confirmed! Your digital bus pass is ready.')
-    return redirect('view_pass', pass_id=bus_pass.pass_id)
+        messages.success(request, f'✅ Pass {bus_pass.pass_id_short} activated for {bus_pass.user.get_full_name() or bus_pass.user.username}.')
+    else:
+        messages.warning(request, f'Pass {bus_pass.pass_id_short} is already {bus_pass.status}.')
+    return redirect('admin_dashboard')
 
 
 @auth_required
@@ -896,6 +909,52 @@ def admin_add_driver_view(request):
             messages.success(request, f'✅ Driver "{driver_name}" created (no bus assigned).')
 
     return redirect('admin_dashboard')
+
+
+@auth_required
+@user_passes_test(is_admin, login_url='dashboard')
+def faculty_reserve_view(request):
+    """Admin: create a ₹0 active bus pass for a faculty/staff seat reservation."""
+    buses = Bus.objects.filter(is_active=True).select_related('route').order_by('bus_number')
+
+    if request.method == 'POST':
+        form = FacultyReserveForm(request.POST)
+        if form.is_valid():
+            bus = form.cleaned_data['bus']
+            faculty_name = form.cleaned_data['faculty_name'].strip()
+            bp_obj = form.cleaned_data.get('boarding_point')  # optional
+
+            # Create a ₹0 active pass for the faculty member under the admin's account
+            bus_pass = BusPass.objects.create(
+                user=request.user,
+                bus=bus,
+                route=bus.route,
+                boarding_point=bp_obj.name if bp_obj else '—',
+                boarding_point_ref=bp_obj if bp_obj else None,
+                amount_paid=0,
+                status='active',
+                valid_from=date.today(),
+                valid_until=date.today(),
+                notes=f'Faculty Reserve – {faculty_name}',
+            )
+
+            # Decrement available seats
+            if bus.current_occupancy < bus.capacity:
+                bus.current_occupancy += 1
+                bus.save(update_fields=['current_occupancy'])
+
+            messages.success(
+                request,
+                f'✅ Seat reserved for {faculty_name} on Bus {bus.bus_number}. Pass ID: {bus_pass.pass_id_short}'
+            )
+            return redirect('admin_dashboard')
+    else:
+        form = FacultyReserveForm()
+
+    return render(request, 'core/faculty_reserve.html', {
+        'form': form,
+        'buses': buses,
+    })
 
 
 @auth_required

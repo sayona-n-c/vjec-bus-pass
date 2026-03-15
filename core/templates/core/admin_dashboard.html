@@ -57,6 +57,17 @@
 
 /* ── Add button ── */
 .add-toggle-btn{padding:0.5rem 1.2rem;background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;border-radius:8px;font-size:0.85rem;font-weight:700;cursor:pointer;margin-bottom:1rem}
+.action-btn-confirm{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
+.action-btn-confirm:hover{background:#dcfce7}
+
+/* Proof lightbox modal */
+#proof-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center}
+#proof-modal.show{display:flex}
+#proof-modal-inner{background:#fff;border-radius:16px;padding:1.5rem;max-width:520px;width:90%;box-shadow:0 8px 48px rgba(0,0,0,0.35)}
+#proof-modal-inner img{width:100%;border-radius:8px;margin-bottom:1rem;max-height:400px;object-fit:contain}
+#proof-modal-inner h4{font-size:1rem;font-weight:700;color:#1e3a5f;margin-bottom:0.4rem}
+#proof-modal-inner p{font-size:0.85rem;color:#4a5568;margin-bottom:1rem}
+#proof-modal-actions{display:flex;gap:0.75rem;flex-wrap:wrap}
 </style>
 {% endblock %}
 
@@ -256,7 +267,7 @@
                 <thead>
                     <tr>
                         <th>Name</th><th>Username</th><th>VML No</th>
-                        <th>Role</th><th>Department</th><th>Phone</th><th>Joined</th><th>Actions</th>
+                        <th>Role</th><th>Type</th><th>Department</th><th>Phone</th><th>Joined</th><th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -266,6 +277,13 @@
                         <td style="color:#64748b">{{ u.username }}</td>
                         <td>{{ u.profile.vml_no|default:"—" }}</td>
                         <td><span class="badge badge-primary">{{ u.profile.role|capfirst }}</span></td>
+                        <td>
+                            {% if u.profile.role == 'student' %}
+                            <span class="badge {% if u.profile.is_hosteler %}badge-warning{% else %}badge-info{% endif %}" style="font-size:0.72rem">
+                                {% if u.profile.is_hosteler %}🏢 Hosteler{% else %}🏠 Day Scholar{% endif %}
+                            </span>
+                            {% else %}—{% endif %}
+                        </td>
                         <td>{{ u.profile.department|default:"—" }}</td>
                         <td style="color:#64748b;font-size:0.82rem">{{ u.profile.phone|default:"—" }}</td>
                         <td style="color:#94a3b8;font-size:0.82rem">{{ u.date_joined|date:"d M Y" }}</td>
@@ -282,7 +300,7 @@
                         </td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:2rem">No users yet</td></tr>
+                    <tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:2rem">No users yet</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -292,18 +310,23 @@
 
     <!-- ═══════════ TAB: MANAGE PASSES ═══════════ -->
     <div class="tab-panel" id="tab-passes">
+
+        <!-- Pending proof banner -->
+        {% with pending_count=passes|length %}
+        {% endwith %}
+
         <div class="table-wrapper">
             <table>
                 <thead>
                     <tr>
                         <th>Pass ID</th><th>Student</th><th>VML</th><th>Bus</th>
                         <th>Route</th><th>Boarding</th><th>Amount</th><th>Status</th>
-                        <th>Date</th><th>Actions</th>
+                        <th>Proof</th><th>Date</th><th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for p in passes %}
-                    <tr>
+                    <tr {% if p.status == 'pending' and p.payment_screenshot %}style="background:rgba(22,163,74,0.05)"{% endif %}>
                         <td><a href="{% url 'view_pass' p.pass_id %}" style="color:var(--accent-light)">{{ p.pass_id_short }}</a></td>
                         <td>{{ p.user.get_full_name|default:p.user.username }}</td>
                         <td>{{ p.user.profile.vml_no|default:"—" }}</td>
@@ -323,8 +346,23 @@
                                 <button type="submit">💾</button>
                             </form>
                         </td>
+                        <td style="text-align:center">
+                            {% if p.payment_screenshot %}
+                            <button class="action-btn action-btn-qr" style="font-size:0.72rem"
+                                onclick="showProof('{{ p.payment_screenshot.url }}','{{ p.pass_id_short }}','{{ p.user.get_full_name|default:p.user.username }}','{{ p.payment_notes|default:"—" }}','{% url "payment_confirm" p.pass_id %}','{{ p.status }}')">📸 View</button>
+                            {% else %}
+                            <span style="color:#94a3b8;font-size:0.75rem">—</span>
+                            {% endif %}
+                        </td>
                         <td style="color:#94a3b8;font-size:0.82rem">{{ p.created_at|date:"d M Y" }}</td>
-                        <td>
+                        <td style="display:flex;gap:0.3rem;flex-wrap:wrap">
+                            {% if p.status == 'pending' and p.payment_screenshot %}
+                            <a href="{% url 'payment_confirm' p.pass_id %}"
+                               class="action-btn action-btn-confirm"
+                               onclick="return confirm('Confirm payment and activate pass {{ p.pass_id_short }} for {{ p.user.get_full_name|default:p.user.username }}?')">
+                               ✅ Confirm
+                            </a>
+                            {% endif %}
                             <form method="POST" action="{% url 'admin_delete_pass' p.pk %}" style="display:inline"
                                   onsubmit="return confirm('Delete pass {{ p.pass_id_short }}?')">
                                 {% csrf_token %}
@@ -333,10 +371,25 @@
                         </td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="10" style="text-align:center;color:#94a3b8;padding:2rem">No passes found</td></tr>
+                    <tr><td colspan="11" style="text-align:center;color:#94a3b8;padding:2rem">No passes found</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- ── Payment Proof Lightbox Modal ── -->
+    <div id="proof-modal">
+        <div id="proof-modal-inner">
+            <h4 id="proof-modal-title">Payment Screenshot</h4>
+            <p id="proof-modal-meta" style="color:#64748b"></p>
+            <img id="proof-modal-img" src="" alt="Payment proof" />
+            <p id="proof-modal-notes" style="font-size:0.82rem;color:#374151;margin-bottom:1rem"></p>
+            <div id="proof-modal-actions">
+                <a id="proof-confirm-btn" href="#" class="action-btn action-btn-confirm"
+                   style="padding:0.55rem 1.2rem;font-size:0.88rem" onclick="return confirmPayment(event)">✅ Confirm Payment &amp; Activate Pass</a>
+                <button onclick="closeProof()" class="action-btn" style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e0;padding:0.55rem 1.2rem;font-size:0.88rem">✖ Close</button>
+            </div>
         </div>
     </div>
 
@@ -547,6 +600,35 @@ function toggleForm(id) {
         el.querySelector('input')?.focus();
     }
 }
+
+// ── Payment Proof Lightbox ──
+let _currentConfirmUrl = null;
+function showProof(imgUrl, passId, studentName, notes, confirmUrl, status) {
+    document.getElementById('proof-modal-img').src = imgUrl;
+    document.getElementById('proof-modal-title').textContent = 'Payment Screenshot — Pass ' + passId;
+    document.getElementById('proof-modal-meta').textContent = 'Student: ' + studentName + ' · Status: ' + status;
+    document.getElementById('proof-modal-notes').textContent = notes !== '—' ? 'UPI Ref: ' + notes : 'No transaction ID provided.';
+    _currentConfirmUrl = confirmUrl;
+    const confirmBtn = document.getElementById('proof-confirm-btn');
+    if (status === 'pending') {
+        confirmBtn.style.display = 'inline-flex';
+        confirmBtn.href = confirmUrl;
+    } else {
+        confirmBtn.style.display = 'none';
+    }
+    document.getElementById('proof-modal').classList.add('show');
+}
+function closeProof() {
+    document.getElementById('proof-modal').classList.remove('show');
+}
+function confirmPayment(e) {
+    if (!confirm('Confirm this payment and activate the bus pass?')) { e.preventDefault(); return false; }
+    return true;
+}
+// Close modal on outside click
+document.getElementById('proof-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeProof();
+});
 </script>
 
 <!-- Leaflet JS: GPS Map -->

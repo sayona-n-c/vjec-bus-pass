@@ -73,6 +73,10 @@ class UserProfile(models.Model):
         ('driver', 'Driver'),
         ('admin', 'Admin'),
     ]
+    STUDENT_TYPE_CHOICES = [
+        ('day_scholar', 'Day Scholar'),
+        ('hosteler', 'Hosteler'),
+    ]
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     vml_no = models.CharField(
@@ -83,6 +87,12 @@ class UserProfile(models.Model):
         null=True
     )
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='student')
+    student_type = models.CharField(
+        max_length=15,
+        choices=STUDENT_TYPE_CHOICES,
+        default='hosteler',
+        help_text='Day Scholar: free QR attendance only. Hosteler: must book & pay for pass.'
+    )
     phone = models.CharField(max_length=15, blank=True)
     department = models.CharField(max_length=100, blank=True)
     qr_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
@@ -90,6 +100,14 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.get_full_name()} ({self.vml_no or self.role})"
+
+    @property
+    def is_day_scholar(self):
+        return self.student_type == 'day_scholar'
+
+    @property
+    def is_hosteler(self):
+        return self.student_type == 'hosteler'
 
     @property
     def display_name(self):
@@ -152,6 +170,16 @@ class BusPass(models.Model):
     valid_until = models.DateField(null=True, blank=True)
     notes = models.CharField(max_length=300, blank=True, default='',
                              help_text="Extra label, e.g. 'Faculty Reserve – Dr. John'")
+    # Payment verification fields (screenshot uploaded by student, verified by admin)
+    payment_screenshot = models.ImageField(
+        upload_to='payment_proofs/',
+        null=True, blank=True,
+        help_text='UPI payment screenshot uploaded by student as proof'
+    )
+    payment_notes = models.CharField(
+        max_length=200, blank=True, default='',
+        help_text='UPI transaction ID or extra payment notes from student'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -76,6 +76,36 @@
                     </div>
                 </div>
 
+                <!-- Student Type (Dayscholar / Hosteler) — shown only for students -->
+                <div class="form-group" id="student-type-group" style="margin-bottom:1.1rem">
+                    <label class="form-label">Student Type *</label>
+                    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:0.4rem">
+                        <label style="flex:1;min-width:130px;cursor:pointer">
+                            <input type="radio" name="student_type" value="day_scholar"
+                                {% if form.student_type.value != 'hosteler' %}checked{% endif %}
+                                style="display:none" class="student-type-radio" />
+                            <div class="student-type-card" data-val="day_scholar"
+                                style="border:2px solid #cbd5e1;border-radius:12px;padding:0.9rem 1rem;text-align:center;transition:all 0.2s;background:#fff">
+                                <div style="font-size:1.5rem;margin-bottom:0.35rem">🏠</div>
+                                <div style="font-weight:700;color:#1e3a8a;font-size:0.92rem">Day Scholar</div>
+                                <div style="font-size:0.75rem;color:#64748b;margin-top:2px">Commutes daily</div>
+                            </div>
+                        </label>
+                        <label style="flex:1;min-width:130px;cursor:pointer">
+                            <input type="radio" name="student_type" value="hosteler"
+                                {% if form.student_type.value == 'hosteler' %}checked{% endif %}
+                                style="display:none" class="student-type-radio" />
+                            <div class="student-type-card" data-val="hosteler"
+                                style="border:2px solid #cbd5e1;border-radius:12px;padding:0.9rem 1rem;text-align:center;transition:all 0.2s;background:#fff">
+                                <div style="font-size:1.5rem;margin-bottom:0.35rem">🏢</div>
+                                <div style="font-weight:700;color:#1e3a8a;font-size:0.92rem">Hosteler</div>
+                                <div style="font-size:0.75rem;color:#64748b;margin-top:2px">Lives on campus</div>
+                            </div>
+                        </label>
+                    </div>
+                    {% for e in form.student_type.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+                </div>
+
                 <div class="grid-2">
                     <div class="form-group">
                         <label class="form-label">Password *</label>
@@ -105,18 +135,46 @@
     </div>
 
     <script>
+        const roleSelect = document.getElementById('role-select');
+        const studentTypeGroup = document.getElementById('student-type-group');
+        const idHint = document.getElementById('id-hint');
+        const vmlInput = document.getElementById('vml-input');
+
         function updateIdHint() {
-            const role = document.getElementById('role-select').value;
-            const hint = document.getElementById('id-hint');
-            const input = document.getElementById('vml-input');
+            const role = roleSelect.value;
             if (role === 'faculty') {
-                hint.textContent = 'Faculty/Staff format: 2 letters + 4 digits  (e.g. SC1234 or FC1234)';
-                input.placeholder = 'e.g. SC1234 or FC1234';
+                idHint.textContent = 'Faculty/Staff format: 2 letters + 4 digits  (e.g. SC1234 or FC1234)';
+                vmlInput.placeholder = 'e.g. SC1234 or FC1234';
+                studentTypeGroup.style.display = 'none';
             } else {
-                hint.textContent = 'Student format: VML + 2-digit year + 2-letter dept + 3-digit roll  (e.g. VML23CS200)';
-                input.placeholder = 'e.g. VML23CS200';
+                idHint.textContent = 'Student format: VML + 2-digit year + 2-letter dept + 3-digit roll  (e.g. VML23CS200)';
+                vmlInput.placeholder = 'e.g. VML23CS200';
+                studentTypeGroup.style.display = '';
             }
         }
+
+        // Highlight the selected student-type card
+        function refreshCardHighlight() {
+            document.querySelectorAll('.student-type-radio').forEach(function(radio) {
+                const card = radio.parentElement.querySelector('.student-type-card');
+                if (radio.checked) {
+                    card.style.borderColor = '#2563eb';
+                    card.style.background = '#eff6ff';
+                } else {
+                    card.style.borderColor = '#cbd5e1';
+                    card.style.background = '#fff';
+                }
+            });
+        }
+
+        // Wire up card clicks
+        document.querySelectorAll('.student-type-radio').forEach(function(radio) {
+            radio.addEventListener('change', refreshCardHighlight);
+        });
+
+        // Set initial state on page load
+        updateIdHint();
+        refreshCardHighlight();
     </script>
     <script src="{% static 'core/js/main.js' %}"></script>
 </body>

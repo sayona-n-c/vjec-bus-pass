@@ -6,15 +6,19 @@ import re
 
 
 class StudentRegistrationForm(UserCreationForm):
-    first_name  = forms.CharField(max_length=50, required=True,  label='First Name')
-    last_name   = forms.CharField(max_length=50, required=True,  label='Last Name')
-    vml_no      = forms.CharField(max_length=20, required=True, label='College ID',
-                                  help_text='Student: VML23CS200  |  Faculty/Staff: SC1234 or FC1234')
-    phone       = forms.CharField(max_length=15, required=False, label='Phone Number')
-    department  = forms.CharField(max_length=100, required=True, label='Department')
-    role        = forms.ChoiceField(
-                      choices=[('student', 'Student'), ('faculty', 'Faculty / Staff')],
-                      label='Role', initial='student')
+    first_name   = forms.CharField(max_length=50, required=True,  label='First Name')
+    last_name    = forms.CharField(max_length=50, required=True,  label='Last Name')
+    vml_no       = forms.CharField(max_length=20, required=True, label='College ID',
+                                   help_text='Student: VML23CS200  |  Faculty/Staff: SC1234 or FC1234')
+    phone        = forms.CharField(max_length=15, required=False, label='Phone Number')
+    department   = forms.CharField(max_length=100, required=True, label='Department')
+    role         = forms.ChoiceField(
+                       choices=[('student', 'Student'), ('faculty', 'Faculty / Staff')],
+                       label='Role', initial='student')
+    student_type = forms.ChoiceField(
+                       choices=[('day_scholar', 'Day Scholar'), ('hosteler', 'Hosteler')],
+                       label='Student Type', initial='hosteler',
+                       required=False)
 
     class Meta:
         model  = User

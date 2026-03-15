@@ -339,19 +339,21 @@
             {% endfor %}
             {% endif %}
 
-            <form method="post" action="{% url 'login' %}">
+            <form method="post" action="{% url 'login' %}" autocomplete="off">
                 {% csrf_token %}
                 <div class="form-group">
-                    <label class="form-label" for="id_username">USERNAME</label>
+                    <label class="form-label" for="id_username">VML Number / Username</label>
                     <input type="text" id="id_username" name="username" class="form-control"
-                        placeholder="Enter your USERNAME (e.g. VML23CS200)" required autofocus style="text-transform:uppercase" />
+                        placeholder="e.g. VML23CS200" required autofocus
+                        autocomplete="off"
+                        style="text-transform:uppercase;letter-spacing:0.5px" />
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="id_password">Password</label>
                     <input type="password" id="id_password" name="password" class="form-control"
-                        placeholder="Enter your password" required />
+                        placeholder="Enter your password" required autocomplete="current-password" />
                 </div>
-                <button type="submit" class="btn-login">Login</button>
+                <button type="submit" class="btn-login">🔐 Login</button>
             </form>
 
             <div class="divider">or</div>
@@ -361,9 +363,7 @@
                 <a href="{% url 'register' %}">Register Here</a>
             </div>
 
-            <div class="timing-note">
-                Booking window: <strong>9:00 AM – 3:10 PM</strong> &nbsp;|&nbsp; Mon – Sat &nbsp;|&nbsp; Sundays closed
-            </div>
+
         </div>
     </div>
 
