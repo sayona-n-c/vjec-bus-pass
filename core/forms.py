@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
-from .models import UserProfile, BusPass, BoardingPoint
+from .models import UserProfile, BusPass, BoardingPoint, Bus
 import re
 
 
@@ -82,3 +82,27 @@ class BusPassBookingForm(forms.Form):
         if bp:
             return BoardingPoint.round_to_nearest_10(bp.fare)
         return 0
+
+
+class FacultyReserveForm(forms.Form):
+    """Admin form for reserving a seat for a faculty/staff member (₹0 pass)."""
+
+    faculty_name = forms.CharField(
+        max_length=100,
+        required=True,
+        label='Faculty / Staff Name',
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Dr. Anitha Mathew'}),
+    )
+    bus = forms.ModelChoiceField(
+        queryset=Bus.objects.filter(is_active=True).select_related('route').order_by('bus_number'),
+        empty_label='-- Select Bus --',
+        label='Bus',
+        widget=forms.Select(attrs={'class': 'form-select'}),
+    )
+    boarding_point = forms.ModelChoiceField(
+        queryset=BoardingPoint.objects.all().order_by('fare', 'name'),
+        empty_label='-- Select Boarding Point (optional) --',
+        label='Boarding Point',
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+    )

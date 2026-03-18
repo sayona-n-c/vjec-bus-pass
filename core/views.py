@@ -20,7 +20,7 @@ from django.conf import settings
 from django.db.models import Count
 
 from .models import Route, Bus, UserProfile, BusPass, Attendance, GPSLocation, BusCoordinator, BoardingPoint
-from .forms import StudentRegistrationForm, BusPassBookingForm
+from .forms import StudentRegistrationForm, BusPassBookingForm, FacultyReserveForm
 
 
 # ──────────────────────────────────────────────
