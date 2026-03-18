@@ -1,4 +1,5 @@
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.utils.html import format_html
 from .models import Route, Bus, UserProfile, BusPass, Attendance, GPSLocation, BusCoordinator, BoardingPoint
 
 # ── Django Admin Branding ──────────────────────────────────────────
@@ -57,10 +58,31 @@ class UserProfileAdmin(admin.ModelAdmin):
 
 @admin.register(BusPass)
 class BusPassAdmin(admin.ModelAdmin):
-    list_display = ('pass_id_short', 'user', 'bus', 'route', 'boarding_point', 'amount_paid', 'status', 'created_at')
+    list_display = ('pass_id_short', 'user', 'bus', 'amount_paid', 'status', 'screenshot_preview', 'created_at')
     list_filter = ('status', 'route')
     search_fields = ('user__username', 'user__first_name', 'boarding_point')
-    readonly_fields = ('pass_id',)
+    readonly_fields = ('pass_id', 'screenshot_preview')
+    actions = ['activate_selected_passes']
+
+    def screenshot_preview(self, obj):
+        if obj.payment_screenshot:
+            return format_html('<img src="{}" style="max-height: 150px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);" />', obj.payment_screenshot.url)
+        return "No Screenshot"
+    screenshot_preview.short_description = 'Payment Proof'
+
+    @admin.action(description='Activate selected passes and allocate seats')
+    def activate_selected_passes(self, request, queryset):
+        activated_count = 0
+        for bus_pass in queryset.filter(status='pending'):
+            bus_pass.status = 'active'
+            bus_pass.save(update_fields=['status'])
+            # Increment occupancy on the bus
+            if bus_pass.bus and bus_pass.bus.current_occupancy < bus_pass.bus.capacity:
+                bus_pass.bus.current_occupancy += 1
+                bus_pass.bus.save(update_fields=['current_occupancy'])
+            activated_count += 1
+            
+        self.message_user(request, f'Successfully activated {activated_count} pending passes.', messages.SUCCESS)
 
 
 @admin.register(Attendance)
