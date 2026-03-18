@@ -1,7 +1,6 @@
 {
   "pythonVersion": "3.12",
   "pythonPlatform": "Windows",
-  "pythonPath": "C:/Users/HP/ss/venv/Scripts/python.exe",
   "venvPath": "C:/Users/HP/ss",
   "venv": "venv",
   "include": ["buspass", "core"],

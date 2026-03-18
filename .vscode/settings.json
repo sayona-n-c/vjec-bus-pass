@@ -1,5 +1,6 @@
 {
   "python.defaultInterpreterPath": "C:\\Users\\HP\\ss\\venv\\Scripts\\python.exe",
+  "python.pythonPath": "C:\\Users\\HP\\ss\\venv\\Scripts\\python.exe",
   "python.analysis.extraPaths": [
     "C:\\Users\\HP\\ss\\venv\\Lib\\site-packages",
     "C:\\Users\\HP\\ss"
@@ -7,8 +8,8 @@
   "python.analysis.venvPath": "C:\\Users\\HP\\ss",
   "python.analysis.venv": "venv",
   "python.analysis.typeCheckingMode": "off",
-  "python.analysis.diagnosticMode": "off",
-  "python.analysis.ignore": ["**"],
+  "python.analysis.diagnosticMode": "openFilesOnly",
+  "python.analysis.ignore": [],
   "python.analysis.diagnosticSeverityOverrides": {
     "reportMissingImports": "none",
     "reportMissingModuleSource": "none",

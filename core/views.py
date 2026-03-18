@@ -425,18 +425,32 @@ def scan_qr_view(request):
         if Attendance.objects.filter(user=profile.user, bus=bus, date=today).exists():
             return JsonResponse({'success': False, 'error': 'Already scanned today for this bus'}, status=409)
 
-        if bus.available_seats <= 0:
-            return JsonResponse({'success': False, 'error': 'Bus is full'}, status=409)
+        if profile.is_hosteler:
+            # Get active pass for this user
+            bus_pass = BusPass.objects.filter(user=profile.user, status='active').first()
+            if not bus_pass:
+                return JsonResponse({'success': False, 'error': 'No active bus pass found. Please book a pass.'}, status=403)
+            return JsonResponse({
+                'success': True,
+                'message': 'Pass already active, no scan required.',
+                'available_seats': bus.available_seats,
+                'student_name': profile.display_name,
+                'bus_number': bus.bus_number,
+            })
 
-        # Get active pass for this user
-        bus_pass = BusPass.objects.filter(user=profile.user, status='active').first()
+        if profile.is_day_scholar:
+            if bus.available_seats <= 0:
+                return JsonResponse({'success': False, 'error': 'Bus is full, no seats available.'}, status=409)
 
-        # Create attendance record (signal will increment occupancy)
-        Attendance.objects.create(
-            user=profile.user,
-            bus=bus,
-            bus_pass=bus_pass,
-        )
+            # Create attendance record
+            Attendance.objects.create(
+                user=profile.user,
+                bus=bus,
+                bus_pass=None,
+            )
+            # increment occupancy explicitly
+            bus.current_occupancy += 1
+            bus.save(update_fields=['current_occupancy'])
 
         bus.refresh_from_db()
         return JsonResponse({
@@ -670,38 +684,43 @@ def mark_attendance_view(request, bus_id):
             'message': f'You have already boarded Bus {bus.bus_number} today.',
         })
 
-    # ── Check for active pass ──
-    active_pass = BusPass.objects.filter(
-        user=request.user,
-        bus=bus,
-        status='active',
-    ).first()
-
-    if not active_pass:
-        # Also allow any active pass (student may be on different bus)
-        any_pass = BusPass.objects.filter(
-            user=request.user,
-            status='active',
-        ).first()
-        if not any_pass:
+    profile = getattr(request.user, 'profile', None)
+    
+    if profile and profile.is_hosteler:
+        # ── Check for active pass ──
+        active_pass = BusPass.objects.filter(user=request.user, status='active').first()
+        if not active_pass:
             return render(request, 'core/attendance_result.html', {
                 'bus': bus,
                 'status': 'no_pass',
                 'message': 'No active bus pass found. Please book a pass before boarding.',
             })
-        active_pass = any_pass
+        return render(request, 'core/attendance_result.html', {
+            'bus': bus,
+            'status': 'already_marked',
+            'message': 'Pass already active, no scan required.',
+            'bus_pass': active_pass,
+        })
 
-    # ── Mark attendance ──
-    attendance = Attendance.objects.create(
-        user=request.user,
-        bus=bus,
-        bus_pass=active_pass,
-    )
+    if profile and profile.is_day_scholar:
+        if bus.available_seats <= 0:
+            return render(request, 'core/attendance_result.html', {
+                'bus': bus,
+                'status': 'no_pass',
+                'message': 'This bus is fully occupied.',
+            })
 
-    # ── Decrement available seats ──
-    if bus.current_occupancy < bus.capacity:
+        # ── Mark attendance ──
+        attendance = Attendance.objects.create(
+            user=request.user,
+            bus=bus,
+            bus_pass=None,
+        )
+
+        # ── Decrement available seats ──
         bus.current_occupancy += 1
         bus.save(update_fields=['current_occupancy'])
+        active_pass = None
 
     return render(request, 'core/attendance_result.html', {
         'bus': bus,

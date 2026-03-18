@@ -226,7 +226,15 @@
 
                 {% else %}
                 {# ── Student/Staff view: booking always open ── #}
-                {% if bus.is_available %}
+                {% if user.profile.is_day_scholar %}
+                <div style="text-align:center;padding:1.5rem;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;">
+                    <div style="font-size:2rem;margin-bottom:0.5rem">🎓</div>
+                    <p style="color:#166534;font-weight:700;font-size:1rem">Day Scholar Access</p>
+                    <p style="color:#15803d;font-size:0.87rem;margin-top:0.4rem">
+                        You do not need to apply for a bus pass. Simply scan the QR code inside the bus to board.
+                    </p>
+                </div>
+                {% elif bus.is_available %}
                 <p style="color:#4a5568;font-size:0.9rem;margin-bottom:1.1rem">
                     Secure your seat on Bus {{ bus.bus_number }}. Fare is calculated based on your boarding point.
                 </p>
